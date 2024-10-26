@@ -10,11 +10,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check } from "lucide-react";
+import { Check, Globe } from "lucide-react";
 import Image from "next/image";
+import { LinkPreview } from "@/components/ui/link-preview";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Language, translations } from '@/components/home/translations';
+import { LanguageDropdown, AuthButtons } from '../components/home/AuthComponents';
 
 export default function LandingPage() {
   const [email, setEmail] = useState("");
+  const [language, setLanguage] = useState<Language>('en');
+
+  const t = translations[language];
 
   const pricingPlans = [
     {
@@ -58,7 +70,7 @@ export default function LandingPage() {
             className="opacity-8"
           />
         </div>
-        
+
         <header className="py-6 relative z-50 -mt-64">
           <div className="relative flex flex-col sm:flex-row items-center justify-between gap-4">
             <motion.div
@@ -67,17 +79,38 @@ export default function LandingPage() {
               transition={{ duration: 0.5 }}
               className="text-2xl font-bold text-primary"
             >
-              Sphere AI
+              
+                Sphere AI
+             
             </motion.div>
-            <nav>
+            <nav className="flex items-center gap-4">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <Globe className="h-[1.2rem] w-[1.2rem]" />
+                    <span className="sr-only">Toggle language</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setLanguage("en")}>
+                    English
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setLanguage("fr")}>
+                    Français
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setLanguage("es")}>
+                    Español
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <SignedIn>
                 <Link href="/dashboard" passHref>
-                  <Button variant="outline">Dashboard</Button>
+                  <Button variant="outline">{t.dashboard}</Button>
                 </Link>
               </SignedIn>
               <SignedOut>
                 <SignInButton>
-                  <Button variant="outline">Sign in</Button>
+                  <Button variant="outline">{t.getStarted}</Button>
                 </SignInButton>
               </SignedOut>
             </nav>
@@ -97,7 +130,7 @@ export default function LandingPage() {
               transition={{ duration: 0.5, delay: 0.5 }}
               className="block"
             >
-              Transform Your Workflow with
+              {t.title}
             </motion.span>
             <motion.span
               initial={{ opacity: 0 }}
@@ -105,7 +138,7 @@ export default function LandingPage() {
               transition={{ duration: 0.5, delay: 0.7 }}
               className="block text-primary mt-2"
             >
-              AI-Powered Intelligence
+              {t.subtitle}
             </motion.span>
           </h1>
           <motion.p
@@ -114,8 +147,7 @@ export default function LandingPage() {
             transition={{ duration: 0.5, delay: 0.9 }}
             className="mt-6 max-w-md mx-auto text-base text-muted-foreground sm:text-lg md:mt-8 md:text-xl md:max-w-3xl"
           >
-            Harness the power of artificial intelligence to automate tasks, optimize processes, and
-            make data-driven decisions fast for modern teams.
+            {t.description}
           </motion.p>
           <motion.div
             initial={{ y: 20, opacity: 0 }}
@@ -126,18 +158,18 @@ export default function LandingPage() {
             <div className="rounded-md shadow">
               <SignedOut>
                 <SignInButton>
-                  <Button size="lg" className="w-full sm:w-auto">Get Started</Button>
+                  <Button size="lg" className="w-full sm:w-auto">{t.getStarted}</Button>
                 </SignInButton>
               </SignedOut>
               <SignedIn>
                 <Link href="/dashboard" passHref>
-                  <Button size="lg" className="w-full sm:w-auto">Dashboard</Button>
+                  <Button size="lg" className="w-full sm:w-auto">{t.dashboard}</Button>
                 </Link>
               </SignedIn>
             </div>
             <div className="mt-3 sm:mt-0 sm:ml-3">
               <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                Live Demo
+                {t.liveDemo}
               </Button>
             </div>
           </motion.div>
@@ -151,9 +183,9 @@ export default function LandingPage() {
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
-              <h2 className="text-base text-primary font-semibold tracking-wide uppercase">Features</h2>
+              <h2 className="text-base text-primary font-semibold tracking-wide uppercase">{t.features}</h2>
               <p className="mt-2 text-2xl sm:text-3xl leading-8 font-extrabold tracking-tight text-foreground sm:text-4xl">
-                Powerful Features for Modern Teams
+                {t.featuresTitle}
               </p>
             </div>
 
@@ -172,10 +204,10 @@ export default function LandingPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
               <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground sm:text-4xl">
-                Choose the Perfect Plan for Your Team
+                {t.pricing}
               </h2>
               <p className="mt-3 max-w-2xl mx-auto text-lg sm:text-xl text-muted-foreground">
-                Select a plan that fits your needs and scale as you grow
+                {t.pricingDescription}
               </p>
             </div>
             <div className="mt-12 space-y-4 sm:mt-16 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-6 lg:max-w-4xl lg:mx-auto xl:max-w-none xl:mx-0 xl:grid-cols-3">
@@ -209,7 +241,7 @@ export default function LandingPage() {
                     </CardContent>
                     <CardFooter>
                       <Button className="w-full" variant={plan.name === "Pro" ? "default" : "outline"}>
-                        {plan.name === "Enterprise" ? "Contact Sales" : "Get Started"}
+                        {plan.name === "Enterprise" ? "Contact Sales" : t.getStarted}
                       </Button>
                     </CardFooter>
                   </Card>
@@ -226,20 +258,21 @@ export default function LandingPage() {
           className="bg-muted rounded-lg shadow-lg my-12 relative z-20"
         >
           <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8 lg:flex lg:items-center lg:justify-between">
+            
             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
-              <span className="block">Ready to Transform Your Workflow?</span>
-              <span className="block text-primary mt-2">Join thousands of teams already using AISpere.</span>
+              <span className="block">{t.ready}</span>
+              <span className="block text-primary mt-2">{t.join}</span>
             </h2>
             <div className="mt-8 flex justify-center lg:mt-0 lg:flex-shrink-0">
               <div className="inline-flex rounded-md shadow">
                 <SignedOut>
                   <SignInButton>
-                    <Button size="lg">Get Started</Button>
+                    <Button size="lg">{t.getStarted}</Button>
                   </SignInButton>
                 </SignedOut>
                 <SignedIn>
                   <Link href="/dashboard" passHref>
-                    <Button size="lg">Dashboard</Button>
+                    <Button size="lg">{t.dashboard}</Button>
                   </Link>
                 </SignedIn>
               </div>
@@ -256,10 +289,10 @@ export default function LandingPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
               <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
-                Stay Updated
+                {t.stayUpdated}
               </h2>
               <p className="mt-3 max-w-2xl mx-auto text-lg sm:text-xl text-muted-foreground">
-                Get the latest news and updates from AISpere delivered straight to your inbox.
+                {t.newsletter}
               </p>
             </div>
             <form className="mt-8 sm:flex justify-center" onSubmit={(e) => e.preventDefault()}>
@@ -279,7 +312,7 @@ export default function LandingPage() {
               />
               <div className="mt-3 rounded-md shadow sm:mt-0 sm:ml-3 sm:flex-shrink-0">
                 <Button type="submit" size="lg" className="w-full sm:w-auto">
-                  Notify me
+                  {t.notifyMe}
                 </Button>
               </div>
             </form>
