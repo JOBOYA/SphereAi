@@ -2,7 +2,7 @@
 
 import { SignInButton, SignedIn, SignedOut } from "@clerk/nextjs";
 import { BackgroundBeamsWithCollision } from "@/components/home/background-beams-with-collision";
-import Bentodemoo from "@/components/home/bentogrid";
+import { Bentodemo } from "@/components/home/bentogrid";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useState } from "react";
@@ -28,26 +28,45 @@ export default function LandingPage() {
 
   const t = translations[language];
 
-  const pricingPlans = [
-    {
-      name: "Starter",
-      price: "$29",
-      description: "Perfect for small teams and startups",
-      features: ["Up to 5 team members", "Basic AI assistance", "10 GB storage", "Email support"],
-    },
-    {
-      name: "Pro",
-      price: "$99",
-      description: "Ideal for growing businesses",
-      features: ["Up to 20 team members", "Advanced AI features", "50 GB storage", "Priority support"],
-    },
-    {
-      name: "Enterprise",
-      price: "Custom",
-      description: "For large organizations with specific needs",
-      features: ["Unlimited team members", "Custom AI solutions", "Unlimited storage", "24/7 dedicated support"],
-    },
-  ];
+  const pricingPlans = t.pricingPlans;
+
+  {
+    pricingPlans.map((plan, index) => (
+      <motion.div
+        key={plan.name}
+        initial={{ y: 50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, delay: 1.7 + index * 0.2 }}
+      >
+        <Card className="h-full flex flex-col justify-between">
+          <CardHeader>
+            <CardTitle>{plan.name}</CardTitle>
+            <CardDescription>{plan.description}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center">
+              <span className="text-3xl sm:text-4xl font-extrabold text-primary">{plan.price}</span>
+              {plan.name !== "Entreprise" && <span className="text-base font-medium text-muted-foreground">/mois</span>}
+            </div>
+            <ul className="mt-8 space-y-4">
+              {plan.features.map((feature, index) => (
+                <li key={index} className="flex items-start">
+                  <Check className="h-5 w-5 text-primary" />
+                  <p className="ml-3 text-sm sm:text-base text-muted-foreground">{feature}</p>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+          <CardFooter>
+            <Button className="w-full" variant={plan.name === "Pro" ? "default" : "outline"}>
+              {plan.name === "Entreprise" ? "Contact Sales" : t.getStarted}
+            </Button>
+          </CardFooter>
+        </Card>
+      </motion.div>
+    ))
+  }
+
 
   return (
     <motion.main
@@ -79,9 +98,9 @@ export default function LandingPage() {
               transition={{ duration: 0.5 }}
               className="text-2xl font-bold text-primary"
             >
-              
-                Sphere AI
-             
+
+              Sphere AI
+
             </motion.div>
             <nav className="flex items-center gap-4">
               <DropdownMenu>
@@ -183,14 +202,17 @@ export default function LandingPage() {
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
+              <LinkPreview url="https://www.google.com" >
               <h2 className="text-base text-primary font-semibold tracking-wide uppercase">{t.features}</h2>
+              </LinkPreview>
               <p className="mt-2 text-2xl sm:text-3xl leading-8 font-extrabold tracking-tight text-foreground sm:text-4xl">
                 {t.featuresTitle}
               </p>
             </div>
 
             <div className="mt-10">
-              <Bentodemoo />
+              <Bentodemo language={language} />
+
             </div>
           </div>
         </motion.div>
@@ -220,7 +242,9 @@ export default function LandingPage() {
                 >
                   <Card className="h-full flex flex-col justify-between">
                     <CardHeader>
+                      <LinkPreview url="https://www.google.com" >
                       <CardTitle>{plan.name}</CardTitle>
+                      </LinkPreview>
                       <CardDescription>{plan.description}</CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -258,7 +282,7 @@ export default function LandingPage() {
           className="bg-muted rounded-lg shadow-lg my-12 relative z-20"
         >
           <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8 lg:flex lg:items-center lg:justify-between">
-            
+
             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
               <span className="block">{t.ready}</span>
               <span className="block text-primary mt-2">{t.join}</span>

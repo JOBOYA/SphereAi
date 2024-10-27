@@ -10,6 +10,9 @@ const nextConfig = {
         port: '',        
       },],
   },
+  env: {
+    // Exemple : API_URL: process.env.API_URL
+  },
 };
 
 module.exports = nextConfig;
