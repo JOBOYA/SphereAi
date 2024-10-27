@@ -2,9 +2,7 @@
 
 import React, { useState } from 'react';
 import { Language, translations } from "@/components/home/translations";
-
-
-
+import { Brain, Shield, Cloud, Zap } from 'lucide-react';
 
 const CardWithEffect = ({ children }: { children: React.ReactNode }) => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -21,11 +19,10 @@ const CardWithEffect = ({ children }: { children: React.ReactNode }) => {
       onMouseMove={handleMouseMove}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      style={{ willChange: 'transform' }}
     >
       {isHovered && (
         <div
-          className="pointer-events-none absolute rounded-full"
+          className="pointer-events-none absolute rounded-full transition duration-300"
           style={{
             width: '300px',
             height: '300px',
@@ -35,7 +32,6 @@ const CardWithEffect = ({ children }: { children: React.ReactNode }) => {
             filter: 'blur(100px)',
             transform: 'translate(-0%, -0%)',
             zIndex: 10,
-            willChange: 'transform, top, left',
           }}
         />
       )}
@@ -44,59 +40,30 @@ const CardWithEffect = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-const AWSIcon = ({ language }: { language: Language }) => {
-  const t = translations[language];
-  return (
-    <div className="flex flex-col justify-center h-full items-center relative">
-      <div className="text-left p-4 sm:p-6">
-        <h1 className="text-white text-xl sm:text-2xl font-bold mb-2">{t.apiIntegration}</h1>
-        <p className="text-gray-400 text-base sm:text-lg">{t.easyIntegration}</p>
-      </div>
-    </div>
-  );
-};
-
+const IconCard = ({ icon: Icon, title, description }: { icon: React.ElementType; title: string; description: string }) => (
+  <div className="flex flex-col items-center text-left p-4 sm:p-6">
+    <Icon className="w-10 h-10 text-white mb-4" />
+    <h1 className="text-white text-2xl font-bold mb-2">{title}</h1>
+    <p className="text-gray-400 text-lg">{description}</p>
+  </div>
+);
 
 export const BentoBox1 = ({ language }: { language: Language }) => {
   const t = translations[language];
   return (
-    <div className="flex justify-center items-center p-4 sm:p-5 rounded-lg">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-4xl">
+    <div className="flex justify-center items-center p-4 sm:p-6 rounded-lg">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-5xl">
         <CardWithEffect>
-          <div className="flex flex-col justify-between h-full">
-            <div className="mb-4 px-4 sm:px-6 mt-4 sm:mt-6">
-              <div className="flex justify-between items-center mb-4 sm:mb-6 pb-2">
-               
-                <h2 className="text-white/70 text-lg sm:text-xl">{t.advancedAiModels}</h2>
-                
-              </div>
-            </div>
-            <div className="text-left p-4 sm:p-6">
-              
-              <h1 className="text-white text-xl sm:text-2xl font-bold mb-2">{t.scalableInfrastructure}</h1>
-              
-              <p className="text-white/70 text-base sm:text-lg">{t.cloudArchitecture}</p>
-            </div>
-          </div>
+          <IconCard icon={Brain} title={t.advancedAiModels} description={t.scalableInfrastructure} />
         </CardWithEffect>
         <CardWithEffect>
-          <div className="flex flex-col justify-center h-full">
-            <div className="text-left p-4 sm:p-6">
-              <h1 className="text-white text-xl sm:text-2xl font-bold mb-2">{t.privacyFirst}</h1>
-              <p className="text-white/70 text-base sm:text-lg">{t.dataSecurity}</p>
-            </div>
-          </div>
+          <IconCard icon={Shield} title={t.privacyFirst} description={t.dataSecurity} />
         </CardWithEffect>
         <CardWithEffect>
-          <AWSIcon language={language} />
+          <IconCard icon={Cloud} title={t.apiIntegration} description={t.easyIntegration} />
         </CardWithEffect>
         <CardWithEffect>
-          <div className="flex flex-col justify-center h-full items-center relative">
-            <div className="text-left p-4 sm:p-6">
-              <h1 className="text-white text-xl sm:text-2xl font-bold mb-2">{t.realTimeProcessing}</h1>
-              <p className="text-white/70 text-base sm:text-lg">{t.optimizedPipeline}</p>
-            </div>
-          </div>
+          <IconCard icon={Zap} title={t.realTimeProcessing} description={t.optimizedPipeline} />
         </CardWithEffect>
       </div>
     </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { SignInButton, SignedIn, SignedOut } from "@clerk/nextjs";
+import { SignInButton, SignedIn, SignedOut, useAuth } from "@clerk/nextjs";
 import { BackgroundBeamsWithCollision } from "@/components/home/background-beams-with-collision";
 import { Bentodemo } from "@/components/home/bentogrid";
 import Link from "next/link";
@@ -20,15 +20,21 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Language, translations } from '@/components/home/translations';
-import { LanguageDropdown, AuthButtons } from '../components/home/AuthComponents';
 
 export default function LandingPage() {
   const [email, setEmail] = useState("");
   const [language, setLanguage] = useState<Language>('en');
-
+  const [isLoading, setIsLoading] = useState(false);
   const t = translations[language];
 
   const pricingPlans = t.pricingPlans;
+  const handleDashboardClick = () => {
+    setIsLoading(true);
+    // Simulate loading for 1 second
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+  };
 
   {
     pricingPlans.map((plan, index) => (
@@ -124,7 +130,16 @@ export default function LandingPage() {
               </DropdownMenu>
               <SignedIn>
                 <Link href="/dashboard" passHref>
-                  <Button variant="outline">{t.dashboard}</Button>
+                  <Button variant="outline" onClick={handleDashboardClick} disabled={isLoading}>
+                    {isLoading ? (
+                      <>
+                        <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                        Loading...
+                      </>
+                    ) : (
+                      t.dashboard
+                    )}
+                  </Button>
                 </Link>
               </SignedIn>
               <SignedOut>
@@ -182,7 +197,16 @@ export default function LandingPage() {
               </SignedOut>
               <SignedIn>
                 <Link href="/dashboard" passHref>
-                  <Button size="lg" className="w-full sm:w-auto">{t.dashboard}</Button>
+                  <Button size="lg" className="w-full sm:w-auto" onClick={handleDashboardClick} disabled={isLoading}>
+                    {isLoading ? (
+                      <>
+                        <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                        Loading...
+                      </>
+                    ) : (
+                      t.dashboard
+                    )}
+                  </Button>
                 </Link>
               </SignedIn>
             </div>
@@ -203,7 +227,7 @@ export default function LandingPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
               <LinkPreview url="https://www.google.com" >
-              <h2 className="text-base text-primary font-semibold tracking-wide uppercase">{t.features}</h2>
+                <h2 className="text-base text-primary font-semibold tracking-wide uppercase">{t.features}</h2>
               </LinkPreview>
               <p className="mt-2 text-2xl sm:text-3xl leading-8 font-extrabold tracking-tight text-foreground sm:text-4xl">
                 {t.featuresTitle}
@@ -243,7 +267,7 @@ export default function LandingPage() {
                   <Card className="h-full flex flex-col justify-between">
                     <CardHeader>
                       <LinkPreview url="https://www.google.com" >
-                      <CardTitle>{plan.name}</CardTitle>
+                        <CardTitle>{plan.name}</CardTitle>
                       </LinkPreview>
                       <CardDescription>{plan.description}</CardDescription>
                     </CardHeader>
@@ -296,7 +320,16 @@ export default function LandingPage() {
                 </SignedOut>
                 <SignedIn>
                   <Link href="/dashboard" passHref>
-                    <Button size="lg">{t.dashboard}</Button>
+                    <Button size="lg" className="w-full sm:w-auto" onClick={handleDashboardClick} disabled={isLoading}>
+                      {isLoading ? (
+                        <>
+                          <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                          Loading...
+                        </>
+                      ) : (
+                        t.dashboard
+                      )}
+                    </Button>
                   </Link>
                 </SignedIn>
               </div>
