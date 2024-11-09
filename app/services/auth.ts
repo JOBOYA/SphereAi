@@ -12,70 +12,106 @@ interface LoginResponse {
 }
 
 export const authService = {
+  async getClerkToken() {
+    const response = await fetch("/api/auth/getToken");
+    const data = await response.json();
+    if (!response.ok || !data.token) {
+      throw new Error("Impossible de récupérer le token");
+    }
+    return data.token;
+  },
+
   async login(userData: { email: string; password?: string }): Promise<LoginResponse> {
     try {
-      console.log('📡 Début de la requête login');
+      console.log("🔄 Début du processus de login");
       
-      const clerkToken = await fetch('/api/auth/getToken').then(res => res.text());
-
-      // Envoyer uniquement l'email et le token Clerk
-      const requestData = {
-        email: userData.email,
-        password: userData.password || 'dummy-password',
-        clerk_token: clerkToken,
-      };
-
-      console.log('📦 Données envoyées:', requestData);
-
-      const response = await fetch('/api/proxy/login', {
-        method: 'POST',
+      // Tenter d'abord le login
+      let response = await fetch("/api/proxy/login", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${clerkToken}`,
+          "Content-Type": "application/json"
         },
-        body: JSON.stringify(requestData),
+        body: JSON.stringify({
+          email: userData.email
+        })
       });
+
+      // Si l'utilisateur n'existe pas, on tente de le créer
+      if (response.status === 404) {
+        console.log("👤 Utilisateur non trouvé, tentative d'inscription");
+        
+        response = await fetch("/api/proxy/register", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            email: userData.email,
+            first_name: "",
+            last_name: ""
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("❌ Erreur inscription:", errorData);
+          throw new Error(errorData.detail || "Erreur lors de l'inscription");
+        }
+
+        // Une fois inscrit, on retente le login
+        response = await fetch("/api/proxy/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            email: userData.email
+          })
+        });
+      }
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('🚫 Erreur de réponse:', errorData);
-        throw new Error(errorData.error || 'Erreur d\'authentification');
+        console.error("❌ Erreur login:", errorData);
+        throw new Error(errorData.detail || "Erreur d'authentification");
       }
 
       const data = await response.json();
-      console.log('📥 Données reçues:', data);
-
+      console.log("✅ Login réussi");
       return data;
     } catch (error: any) {
-      console.error('❌ Erreur détaillée:', {
-        message: error.message,
-        stack: error.stack
-      });
+      console.error("🚨 Erreur d'authentification:", error);
       throw error;
     }
   },
 
-  async register(userData: { email: string; password: string }) {
+  async register(userData: { email: string; first_name?: string; last_name?: string }) {
     try {
-      const clerkToken = await fetch('/api/auth/getToken').then(res => res.text());
+      console.log("🔄 Début du processus d'inscription");
       
-      console.log('🚀 Tentative d\'inscription avec:', userData.email);
-      const response = await fetch('/api/proxy/register', {
-        method: 'POST',
+      const response = await fetch("/api/proxy/register", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${clerkToken}`,
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          ...userData,
-          clerk_token: clerkToken,
-        }),
+          email: userData.email,
+          first_name: userData.first_name || "",
+          last_name: userData.last_name || ""
+        })
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("❌ Erreur inscription:", errorData);
+        throw new Error(errorData.detail || "Erreur lors de l'inscription");
+      }
+
       const data = await response.json();
-      console.log('📥 Réponse du register:', data);
+      console.log("✅ Inscription réussie");
       return data;
     } catch (error) {
-      console.error('❌ Erreur lors de l\'inscription:', error);
+      console.error("🚨 Erreur lors de l'inscription:", error);
       throw error;
     }
   }
