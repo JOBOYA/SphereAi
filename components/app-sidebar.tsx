@@ -2,21 +2,17 @@
 
 import * as React from "react";
 import {
-  AudioWaveform,
-  BookOpen,
+
   Bot,
-  Command,
+ 
   Frame,
-  GalleryVerticalEnd,
   Map,
   PieChart,
   Settings2,
-  SquareTerminal,
 } from "lucide-react";
 
 import { NavMain } from "@/components/nav-main";
 import { NavProjects } from "@/components/nav-projects";
-import { TeamSwitcher } from "@/components/team-switcher";
 import {
   Sidebar,
   SidebarContent,
@@ -32,23 +28,6 @@ const data = {
 
   navMain: [
     {
-      title: "Playground",
-      url: "#",
-      icon: SquareTerminal,
-      isActive: true,
-      items: [
-        {
-          title: "History",
-          url: "#",
-        },
-
-        {
-          title: "Settings",
-          url: "#",
-        },
-      ],
-    },
-    {
       title: "Models",
       url: "#",
       icon: Bot,
@@ -56,19 +35,7 @@ const data = {
         {
           title: "Chat",
           url: "/dashboard",
-        },
-        {
-          title: "Genesis",
-          url: "#",
-        },
-        {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
-          url: "#",
-        },
+        }
       ],
     },
 
@@ -130,18 +97,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarFooter>
         <div className="flex items-center justify-end w-full p-4 space-x-2">
           {user && (
-            <span className="text-xs text-gray-600">
-              {user.firstName} {user.lastName}
-            </span>
+            <>
+              <span className="text-xs text-gray-600">
+                {user.primaryEmailAddress?.emailAddress}
+              </span>
+              <UserButton
+                afterSignOutUrl="/"
+                appearance={{
+                  elements: {
+                    userButtonAvatarBox: "h-8 w-8 rounded-lg",
+                  },
+                }}
+              />
+            </>
           )}
-          <UserButton
-            afterSignOutUrl="/"
-            appearance={{
-              elements: {
-                userButtonAvatarBox: "h-8 w-8 rounded-lg",
-              },
-            }}
-          />
         </div>
       </SidebarFooter>
       <SidebarRail />

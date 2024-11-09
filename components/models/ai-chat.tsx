@@ -5,6 +5,8 @@ import { Send, User, Bot, Loader2 } from 'lucide-react';
 import * as Avatar from '@radix-ui/react-avatar';
 import { Theme } from '@radix-ui/themes';
 import '@radix-ui/themes/styles.css';
+import { useAuth } from '@/src/app/contexts/AuthContext';
+import { useUser } from '@clerk/nextjs';
 
 interface Message {
   id: string;
@@ -17,11 +19,94 @@ export function AIChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { accessToken } = useAuth();
+  const { user } = useUser();
+
+  useEffect(() => {
+    console.log('🔑 Token dans AIChat:', accessToken ? 'Présent' : 'Absent');
+    if (accessToken) {
+      console.log('🔑 Début du token:', accessToken.substring(0, 20) + '...');
+    }
+  }, [accessToken]);
+
+  const chatWithAI = async (message: string) => {
+    if (!accessToken) {
+      console.error('❌ Token d\'accès manquant pour la requête chat');
+      throw new Error('Token d\'accès non disponible');
+    }
+
+    console.log('🚀 Envoi de message au chat:', {
+      messageLength: message.length,
+      hasToken: !!accessToken,
+      tokenPreview: accessToken.substring(0, 20) + '...'
+    });
+
+    try {
+      const url = 'https://appai.charlesagostinelli.com/api/chat/';
+      
+      const headers = new Headers({
+        'Authorization': `Bearer ${accessToken.trim()}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      });
+
+      console.log('📨 Headers de la requête:', Object.fromEntries(headers.entries()));
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+        body: JSON.stringify({ 
+          message: message.trim()
+        })
+      });
+
+      console.log('📡 Statut de la réponse:', response.status);
+      console.log('📥 Headers de la réponse:', Object.fromEntries(response.headers.entries()));
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('❌ Réponse non-JSON reçue:', contentType);
+        const text = await response.text();
+        console.error('📄 Contenu de la réponse:', text);
+        throw new Error('Réponse invalide du serveur');
+      }
+      
+      const data = await response.json();
+      console.log('📦 Données reçues:', data);
+
+      if (response.ok) {
+        console.log('✅ Réponse du chat reçue:', {
+          messageLength: data.message?.length || 0,
+          apiCallsRemaining: data.api_calls_remaining
+        });
+        return data;
+      } else {
+        console.error('❌ Erreur de réponse du chat:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: data.error || data.detail || 'Erreur inconnue',
+          fullResponse: data
+        });
+        throw new Error(data.error || data.detail || 'Erreur lors de la communication avec le chat');
+      }
+    } catch (error: any) {
+      console.error('💥 Erreur détaillée:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        fullError: error
+      });
+      throw error;
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputMessage.trim() || isLoading) return;
 
+    console.log('📝 Nouveau message:', inputMessage);
+    
     const newMessage: Message = {
       id: Date.now().toString(),
       content: inputMessage,
@@ -33,16 +118,32 @@ export function AIChat() {
     setInputMessage('');
     setIsLoading(true);
 
-    setTimeout(() => {
-      const aiResponse: Message = {
+    try {
+      const response = await chatWithAI(inputMessage);
+      
+      if (response) {
+        const aiResponse: Message = {
+          id: (Date.now() + 1).toString(),
+          content: response.message,
+          role: 'assistant',
+          timestamp: new Date(),
+        };
+        setMessages(prev => [...prev, aiResponse]);
+        console.log('🤖 Réponse IA ajoutée:', aiResponse.content);
+      }
+    } catch (error) {
+      console.error('❌ Erreur lors de la communication avec l\'IA:', error);
+      // Optionnel : Ajouter un message d'erreur dans le chat
+      const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: "Je suis l'assistant IA. Je peux vous aider avec vos questions.",
+        content: "Désolé, une erreur est survenue lors de la communication avec l'IA.",
         role: 'assistant',
         timestamp: new Date(),
       };
-      setMessages(prev => [...prev, aiResponse]);
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -85,15 +186,22 @@ export function AIChat() {
                         }`}
                       >
                         <Avatar.Root className={`
-                          w-10 h-10 rounded-full flex items-center justify-center
+                          w-10 h-10 rounded-full flex items-center justify-center overflow-hidden
                           ${message.role === 'user' ? 'bg-blue-500' : 'bg-gray-100'}
                         `}>
-                          <Avatar.Fallback>
-                            {message.role === 'user' ? 
-                              <User size={20} className="text-white" /> : 
-                              <Bot size={20} className="text-gray-600" />
-                            }
-                          </Avatar.Fallback>
+                          {message.role === 'user' ? (
+                            user?.imageUrl ? (
+                              <Avatar.Image
+                                src={user.imageUrl}
+                                alt={user.fullName || 'User'}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <User size={20} className="text-white" />
+                            )
+                          ) : (
+                            <Bot size={20} className="text-gray-600" />
+                          )}
                         </Avatar.Root>
                         
                         <div className={`

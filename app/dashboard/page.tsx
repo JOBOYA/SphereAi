@@ -7,9 +7,11 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AIChat } from "@/components/models/ai-chat";
+import { useAuth } from '@/src/app/contexts/AuthContext';
 
 export default function DashboardPage() {
   const { user, isLoaded } = useUser();
+  const { setAccessToken } = useAuth();
 
   useEffect(() => {
     const handleAfterSignIn = async () => {
@@ -29,8 +31,13 @@ export default function DashboardPage() {
         console.log('🔄 Préparation de l\'appel API avec:', userData);
         const response = await authService.login(userData);
 
+        if (response.tokens?.access) {
+          setAccessToken(response.tokens.access);
+          console.log('🔑 Token d\'accès stocké');
+        }
+
         console.log('✅ Réponse complète:', {
-          status: response.success,
+          message: response.message,
           data: response,
         });
       } catch (error: any) {
@@ -45,7 +52,7 @@ export default function DashboardPage() {
       console.log('🚀 Démarrage handleAfterSignIn');
       handleAfterSignIn();
     }
-  }, [user, isLoaded]);
+  }, [user, isLoaded, setAccessToken]);
 
   return (
     <SidebarProvider>
@@ -55,13 +62,6 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between p-4 border-b">
             <div className="lg:hidden">
               <SidebarTrigger />
-            </div>
-            <div className="flex items-center gap-2">
-              {user?.primaryEmailAddress?.emailAddress && (
-                <p className="text-sm text-muted-foreground">
-                  Connecté en tant que : {user.primaryEmailAddress.emailAddress}
-                </p>
-              )}
             </div>
           </div>
           <div className="flex-1 w-full">

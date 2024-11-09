@@ -1,6 +1,14 @@
 interface LoginResponse {
-  token?: string;
-  success: boolean;
+  message: string;
+  tokens: {
+    access: string;
+    refresh: string;
+  };
+  user: {
+    id: number;
+    email: string;
+    api_calls_remaining: number;
+  };
 }
 
 export const authService = {
