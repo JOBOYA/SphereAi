@@ -54,6 +54,10 @@ const data = {
       icon: Bot,
       items: [
         {
+          title: "Chat",
+          url: "/dashboard",
+        },
+        {
           title: "Genesis",
           url: "#",
         },
