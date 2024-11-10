@@ -1,9 +1,9 @@
 "use client";
 
-import { SidebarTrigger } from '@/components/ui/sidebar';
-import { ApiLimits } from "@/components/models/api-limits";
-import { SidebarProvider } from '@/components/ui/sidebar';
-import { AppSidebar } from '@/components/app-sidebar';
+import { ApiLimits } from "@/components/models/api-limits"
+import { AppSidebar } from "@/components/app-sidebar"
+import { SidebarProvider } from "@/components/ui/sidebar"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 
 export default function LimitsPage() {
   return (
@@ -22,5 +22,5 @@ export default function LimitsPage() {
         </div>
       </div>
     </SidebarProvider>
-  );
+  )
 } 
