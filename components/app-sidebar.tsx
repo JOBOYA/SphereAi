@@ -58,7 +58,7 @@ const data = {
         },
         {
           title: "Limits",
-          url: "#",
+          url: "/dashboard/limits",
         },
       ],
     },

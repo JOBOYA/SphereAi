@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, User, Bot, Loader2 } from 'lucide-react';
+import { Send, User, Bot, Loader2, Copy, Check } from 'lucide-react';
 import * as Avatar from '@radix-ui/react-avatar';
 import { Theme } from '@radix-ui/themes';
 import '@radix-ui/themes/styles.css';
@@ -21,6 +21,7 @@ export function AIChat() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [apiCalls, setApiCalls] = useState<number | null>(null);
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const { accessToken } = useAuth();
   const { user } = useUser();
 
@@ -123,6 +124,16 @@ export function AIChat() {
     }
   };
 
+  const handleCopyMessage = async (content: string, messageId: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedMessageId(messageId);
+      setTimeout(() => setCopiedMessageId(null), 2000); // Reset après 2 secondes
+    } catch (err) {
+      console.error('Erreur lors de la copie:', err);
+    }
+  };
+
   return (
     <Theme appearance="light" accentColor="blue" radius="large">
       <div className="flex flex-col h-full w-full">
@@ -175,15 +186,34 @@ export function AIChat() {
                       >
                         {/* Message principal */}
                         <div className={`
-                          px-4 py-2 shadow-sm
+                          px-4 py-2 shadow-sm relative group cursor-pointer
                           ${message.role === 'user'
                             ? 'bg-[#4F46E5] text-white rounded-t-2xl rounded-l-2xl rounded-br-lg max-w-[320px]'
-                            : 'bg-[#F3F4F6] text-gray-800 rounded-t-2xl rounded-r-2xl rounded-bl-lg max-w-[480px]'
+                            : 'bg-[#F3F4F6] text-gray-800 rounded-t-2xl rounded-r-2xl rounded-bl-lg max-w-[480px] hover:bg-gray-100'
                           }
-                        `}>
+                        `}
+                        onClick={message.role === 'assistant' ? () => handleCopyMessage(message.content, message.id) : undefined}
+                        >
                           <div className="text-sm whitespace-pre-wrap break-words">
                             {message.content}
                           </div>
+                          
+                          {/* Indicateur de copie pour les messages de l'IA */}
+                          {message.role === 'assistant' && (
+                            <div className="absolute bottom-2 right-2 text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                              {copiedMessageId === message.id ? (
+                                <span className="flex items-center gap-1">
+                                  <Check size={12} />
+                                  Copié
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-1">
+                                  <Copy size={12} />
+                                  Cliquer pour copier
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
 
                         {/* Timestamp en petit sous le message */}
