@@ -1,12 +1,21 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, User, Bot, Loader2, Copy, Check } from 'lucide-react';
+import { Send, User, Bot, Loader2, Copy, Check, Sparkles } from 'lucide-react';
 import * as Avatar from '@radix-ui/react-avatar';
 import { Theme } from '@radix-ui/themes';
 import '@radix-ui/themes/styles.css';
 import { useAuth } from '@/src/app/contexts/AuthContext';
 import { useUser } from '@clerk/nextjs';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 interface Message {
   id: string;
@@ -22,6 +31,8 @@ export function AIChat() {
   const [error, setError] = useState<string | null>(null);
   const [apiCalls, setApiCalls] = useState<number | null>(null);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [apiCallsRemaining, setApiCallsRemaining] = useState<number | null>(null);
   const { accessToken } = useAuth();
   const { user } = useUser();
 
@@ -63,7 +74,9 @@ export function AIChat() {
                 }, (estimatedTime + 2) * 1000);
                 return null;
             } else if (response.status === 403) {
-                setError('Vous avez épuisé vos appels API disponibles');
+                setShowUpgradeModal(true);
+                setError('Limite d\'appels API atteinte');
+                return null;
             } else if (response.status === 401) {
                 setError('Session expirée, veuillez vous reconnecter');
             } else {
@@ -72,7 +85,7 @@ export function AIChat() {
             return null;
         }
 
-        setApiCalls(data.api_calls_remaining);
+        setApiCallsRemaining(data.api_calls_remaining);
         setError(null);
         return data.message;
 
@@ -291,6 +304,78 @@ export function AIChat() {
             </form>
           </div>
         </div>
+
+        {/* Ajouter un indicateur d'appels API restants */}
+        {apiCallsRemaining !== null && apiCallsRemaining <= 10 && (
+          <div className="px-4 py-2 bg-yellow-50 border-b border-yellow-100">
+            <p className="text-sm text-yellow-800 flex items-center justify-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              {apiCallsRemaining === 0 
+                ? "Vous avez atteint votre limite d'appels API" 
+                : `${apiCallsRemaining} appels API restants`
+              }
+            </p>
+          </div>
+        )}
+
+        {/* Modal de mise à niveau */}
+        <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
+          <DialogContent className="sm:max-w-[425px] bg-white dark:bg-gray-900">
+            <DialogHeader className="space-y-4">
+              <DialogTitle className="flex items-center gap-2">
+                <Sparkles className="h-6 w-6 text-yellow-500" />
+                <span className="text-2xl font-bold">Augmentez vos limites</span>
+              </DialogTitle>
+              <DialogDescription>
+                <div className="space-y-4">
+                  <div className="bg-yellow-50 dark:bg-yellow-900/50 border border-yellow-200 dark:border-yellow-800 p-4 rounded-lg">
+                    <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                      {apiCallsRemaining === 0 
+                        ? "Vous avez atteint votre limite d'utilisation quotidienne !" 
+                        : "Vous approchez de votre limite d'utilisation quotidienne !"
+                      }
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h4 className="font-semibold text-foreground">Le plan Pro inclut :</h4>
+                    <ul className="space-y-3">
+                      <li className="flex items-center gap-3 text-muted-foreground">
+                        <div className="h-1.5 w-1.5 rounded-full bg-primary"></div>
+                        <span className="text-sm">10 000 appels API par jour</span>
+                      </li>
+                      <li className="flex items-center gap-3 text-muted-foreground">
+                        <div className="h-1.5 w-1.5 rounded-full bg-primary"></div>
+                        <span className="text-sm">Support prioritaire 24/7</span>
+                      </li>
+                      <li className="flex items-center gap-3 text-muted-foreground">
+                        <div className="h-1.5 w-1.5 rounded-full bg-primary"></div>
+                        <span className="text-sm">Fonctionnalités avancées exclusives</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </DialogDescription>
+            </DialogHeader>
+
+            <DialogFooter className="flex flex-col gap-2 sm:flex-col mt-6">
+              <Button 
+                className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                size="lg"
+                onClick={() => window.location.href = '/pricing'}
+              >
+                Passer au Plan Pro
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => setShowUpgradeModal(false)}
+              >
+                Continuer avec le plan gratuit
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </Theme>
   );
