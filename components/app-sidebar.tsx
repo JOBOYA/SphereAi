@@ -10,6 +10,7 @@ import {
   PieChart,
   Settings2,
 } from "lucide-react";
+import Link from "next/link";
 
 import { NavMain } from "@/components/nav-main";
 import { NavProjects } from "@/components/nav-projects";
