@@ -66,6 +66,10 @@ export const authService = {
 
       const data = await response.json();
       console.log("✅ Login réussi");
+      
+      // Stocker le token d'accès dans le localStorage
+      localStorage.setItem('accessToken', data.tokens.access);
+      
       return data;
     } catch (error: any) {
       console.error("🚨 Erreur d'authentification:", error);

@@ -19,6 +19,8 @@ export function AIChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [apiCalls, setApiCalls] = useState<number | null>(null);
   const { accessToken } = useAuth();
   const { user } = useUser();
 
@@ -29,84 +31,61 @@ export function AIChat() {
     }
   }, [accessToken]);
 
-  const chatWithAI = async (message: string) => {
-    if (!accessToken) {
-      console.error('❌ Token d\'accès manquant pour la requête chat');
-      throw new Error('Token d\'accès non disponible');
-    }
-
-    console.log('🚀 Envoi de message au chat:', {
-      messageLength: message.length,
-      hasToken: !!accessToken,
-      tokenPreview: accessToken.substring(0, 20) + '...'
-    });
-
+  const sendMessage = async (message: string) => {
     try {
-      const url = 'https://appai.charlesagostinelli.com/api/chat/';
-      
-      const headers = new Headers({
-        'Authorization': `Bearer ${accessToken.trim()}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      });
+        // Récupérer le token d'accès du localStorage
+        const accessToken = localStorage.getItem('accessToken');
+        
+        if (!accessToken) {
+            setError('Veuillez vous connecter pour utiliser le chat');
+            return;
+        }
 
-      console.log('📨 Headers de la requête:', Object.fromEntries(headers.entries()));
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers,
-        credentials: 'include',
-        body: JSON.stringify({ 
-          message: message.trim()
-        })
-      });
-
-      console.log('📡 Statut de la réponse:', response.status);
-      console.log('📥 Headers de la réponse:', Object.fromEntries(response.headers.entries()));
-
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        console.error('❌ Réponse non-JSON reçue:', contentType);
-        const text = await response.text();
-        console.error('📄 Contenu de la réponse:', text);
-        throw new Error('Réponse invalide du serveur');
-      }
-      
-      const data = await response.json();
-      console.log('📦 Données reçues:', data);
-
-      if (response.ok) {
-        console.log('✅ Réponse du chat reçue:', {
-          messageLength: data.message?.length || 0,
-          apiCallsRemaining: data.api_calls_remaining
+        const response = await fetch('https://appai.charlesagostinelli.com/api/chat/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+            },
+            body: JSON.stringify({ message })
         });
-        return data;
-      } else {
-        console.error('❌ Erreur de réponse du chat:', {
-          status: response.status,
-          statusText: response.statusText,
-          error: data.error || data.detail || 'Erreur inconnue',
-          fullResponse: data
-        });
-        throw new Error(data.error || data.detail || 'Erreur lors de la communication avec le chat');
-      }
-    } catch (error: any) {
-      console.error('💥 Erreur détaillée:', {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-        fullError: error
-      });
-      throw error;
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            if (response.status === 503) {
+                const estimatedTime = Math.ceil(data.estimated_time * 20);
+                setError(`Le modèle se charge, veuillez patienter environ ${estimatedTime} secondes`);
+
+                setTimeout(() => {
+                    return sendMessage(message);
+                }, (estimatedTime + 2) * 1000);
+                return null;
+            } else if (response.status === 403) {
+                setError('Vous avez épuisé vos appels API disponibles');
+            } else if (response.status === 401) {
+                setError('Session expirée, veuillez vous reconnecter');
+            } else {
+                throw new Error(data.error || 'Une erreur est survenue');
+            }
+            return null;
+        }
+
+        setApiCalls(data.api_calls_remaining);
+        setError(null);
+        return data.message;
+
+    } catch (error) {
+        console.error('Erreur:', error);
+        setError('Une erreur est survenue lors de la communication avec l\'IA');
+        return null;
     }
-  };
+};
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputMessage.trim() || isLoading) return;
 
-    console.log('📝 Nouveau message:', inputMessage);
-    
     const newMessage: Message = {
       id: Date.now().toString(),
       content: inputMessage,
@@ -119,21 +98,19 @@ export function AIChat() {
     setIsLoading(true);
 
     try {
-      const response = await chatWithAI(inputMessage);
+      const responseMessage = await sendMessage(inputMessage);
       
-      if (response) {
+      if (responseMessage) {
         const aiResponse: Message = {
           id: (Date.now() + 1).toString(),
-          content: response.message,
+          content: responseMessage,
           role: 'assistant',
           timestamp: new Date(),
         };
         setMessages(prev => [...prev, aiResponse]);
-        console.log('🤖 Réponse IA ajoutée:', aiResponse.content);
       }
     } catch (error) {
-      console.error('❌ Erreur lors de la communication avec l\'IA:', error);
-      // Optionnel : Ajouter un message d'erreur dans le chat
+      console.error('❌ Erreur:', error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         content: "Désolé, une erreur est survenue lors de la communication avec l'IA.",
@@ -172,48 +149,72 @@ export function AIChat() {
                   </div>
                 </div>
               ) : (
-                <div className="w-full space-y-6 p-6">
+                <div className="w-full space-y-4 p-6">
                   {messages.map((message) => (
                     <div
                       key={message.id}
-                      className={`flex items-start gap-4 ${
+                      className={`flex items-end gap-2 ${
                         message.role === 'user' ? 'justify-end' : 'justify-start'
                       }`}
                     >
+                      {/* Avatar pour l'assistant */}
+                      {message.role === 'assistant' && (
+                        <div className="flex-shrink-0">
+                          <Avatar.Root className="w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-50 border border-gray-200 flex-shrink-0">
+                            <Bot size={16} className="text-gray-600" />
+                          </Avatar.Root>
+                        </div>
+                      )}
+
+                      {/* Bulle de message */}
                       <div
-                        className={`flex gap-4 max-w-[70%] ${
-                          message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
-                        }`}
+                        className={`
+                          relative group
+                          ${message.role === 'user' ? 'items-end' : 'items-start'}
+                        `}
                       >
-                        <Avatar.Root className={`
-                          w-10 h-10 rounded-full flex items-center justify-center overflow-hidden
-                          ${message.role === 'user' ? 'bg-blue-500' : 'bg-gray-100'}
+                        {/* Message principal */}
+                        <div className={`
+                          px-4 py-2 shadow-sm
+                          ${message.role === 'user'
+                            ? 'bg-[#4F46E5] text-white rounded-t-2xl rounded-l-2xl rounded-br-lg max-w-[320px]'
+                            : 'bg-[#F3F4F6] text-gray-800 rounded-t-2xl rounded-r-2xl rounded-bl-lg max-w-[480px]'
+                          }
                         `}>
-                          {message.role === 'user' ? (
-                            user?.imageUrl ? (
+                          <div className="text-sm whitespace-pre-wrap break-words">
+                            {message.content}
+                          </div>
+                        </div>
+
+                        {/* Timestamp en petit sous le message */}
+                        <div className={`
+                          text-[10px] mt-1 opacity-0 group-hover:opacity-100 transition-opacity
+                          ${message.role === 'user' ? 'text-right mr-1' : 'ml-1'}
+                          text-gray-400
+                        `}>
+                          {new Date(message.timestamp).toLocaleTimeString('fr-FR', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Avatar pour l'utilisateur */}
+                      {message.role === 'user' && (
+                        <div className="flex-shrink-0">
+                          <Avatar.Root className="w-8 h-8 overflow-hidden rounded-full flex items-center justify-center bg-[#4F46E5] flex-shrink-0 ring-2 ring-white">
+                            {user?.imageUrl ? (
                               <Avatar.Image
                                 src={user.imageUrl}
                                 alt={user.fullName || 'User'}
                                 className="w-full h-full object-cover"
                               />
                             ) : (
-                              <User size={20} className="text-white" />
-                            )
-                          ) : (
-                            <Bot size={20} className="text-gray-600" />
-                          )}
-                        </Avatar.Root>
-                        
-                        <div className={`
-                          py-3 px-4 rounded-xl text-sm
-                          ${message.role === 'user' 
-                            ? 'bg-blue-500 text-white' 
-                            : 'bg-gray-50 text-gray-900 border border-gray-100'
-                          }
-                        `}>
-                          {message.content}
+                              <User size={16} className="text-white" />
+                            )}
+                          </Avatar.Root>
                         </div>
-                      </div>
+                      )}
                     </div>
                   ))}
                 </div>
