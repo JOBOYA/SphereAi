@@ -25,50 +25,38 @@ export const authService = {
     try {
       console.log("🔄 Début du processus de login");
       
-      // Tenter d'abord le login
-      let response = await fetch("/api/proxy/login", {
+      // Récupérer d'abord le clerk token
+      const clerkToken = await this.getClerkToken();
+      
+      // Tenter d'abord l'inscription
+      let response = await fetch("/api/proxy/register", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${clerkToken}`
         },
         body: JSON.stringify({
           email: userData.email
         })
       });
 
-      // Si l'utilisateur n'existe pas, on tente de le créer
-      if (response.status === 404) {
-        console.log("👤 Utilisateur non trouvé, tentative d'inscription");
-        
-        response = await fetch("/api/proxy/register", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            email: userData.email,
-            first_name: "",
-            last_name: ""
-          })
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.error("❌ Erreur inscription:", errorData);
-          throw new Error(errorData.detail || "Erreur lors de l'inscription");
-        }
-
-        // Une fois inscrit, on retente le login
-        response = await fetch("/api/proxy/login", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            email: userData.email
-          })
-        });
+      if (!response.ok && response.status !== 400) {
+        const errorData = await response.json();
+        console.error("❌ Erreur inscription:", errorData);
+        throw new Error(errorData.detail || "Erreur lors de l'inscription");
       }
+
+      // Une fois inscrit (ou si l'utilisateur existe déjà), on fait le login
+      response = await fetch("/api/proxy/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${clerkToken}`
+        },
+        body: JSON.stringify({
+          email: userData.email
+        })
+      });
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -85,19 +73,20 @@ export const authService = {
     }
   },
 
-  async register(userData: { email: string; first_name?: string; last_name?: string }) {
+  async register(userData: { email: string }) {
     try {
       console.log("🔄 Début du processus d'inscription");
+      
+      const clerkToken = await this.getClerkToken();
       
       const response = await fetch("/api/proxy/register", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${clerkToken}`
         },
         body: JSON.stringify({
-          email: userData.email,
-          first_name: userData.first_name || "",
-          last_name: userData.last_name || ""
+          email: userData.email
         })
       });
 
