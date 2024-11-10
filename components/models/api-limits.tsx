@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Card } from '@/components/ui/card';
+import { TrendingUp } from "lucide-react";
+import { Bar, BarChart, CartesianGrid, XAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { Card } from "@/components/ui/card";
 import { Loader2, AlertCircle } from 'lucide-react';
 
 interface ApiCallStats {
@@ -11,8 +12,6 @@ interface ApiCallStats {
   user_email: string;
   status: string;
 }
-
-const COLORS = ['#4F46E5', '#10B981'];
 
 export function ApiLimits() {
   const [stats, setStats] = useState<ApiCallStats | null>(null);
@@ -64,109 +63,117 @@ export function ApiLimits() {
   }
 
   const usedCalls = 1000 - stats.api_calls_remaining;
-  const pieData = [
-    { name: 'Utilisés', value: usedCalls },
-    { name: 'Restants', value: stats.api_calls_remaining }
+  const chartData = [
+    {
+      période: "Aujourd'hui",
+      utilisés: usedCalls,
+      restants: stats.api_calls_remaining
+    }
   ];
 
   return (
-    <div className="flex flex-col h-full w-full">
-      <div className="flex-1 flex items-center justify-center py-8">
-        <div className="flex flex-col h-[600px] max-h-[80vh] w-full max-w-4xl">
-          <div className="flex-none px-6 py-4 border-b rounded-t-xl bg-white">
-            <h1 className="text-xl font-semibold text-gray-900">Utilisation de l'API</h1>
-            <p className="text-sm text-gray-500">Suivez votre consommation d'appels API en temps réel</p>
-          </div>
-
-          <div className="flex-1 overflow-y-auto bg-gray-50 p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="p-6 bg-white shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium text-gray-500">Appels restants</h3>
-                  <div className="p-2 bg-green-50 rounded-full">
-                    <div className="w-2 h-2 rounded-full bg-green-500" />
-                  </div>
-                </div>
-                <p className="text-3xl font-bold text-green-600 mt-2">
-                  {stats.api_calls_remaining}
-                </p>
-                <p className="text-sm text-gray-400 mt-1">
-                  sur 1000 appels totaux
-                </p>
-              </Card>
-
-              <Card className="p-6 bg-white shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium text-gray-500">Appels utilisés</h3>
-                  <div className="p-2 bg-blue-50 rounded-full">
-                    <div className="w-2 h-2 rounded-full bg-blue-500" />
-                  </div>
-                </div>
-                <p className="text-3xl font-bold text-blue-600 mt-2">
-                  {usedCalls}
-                </p>
-                <p className="text-sm text-gray-400 mt-1">
-                  {((usedCalls / 1000) * 100).toFixed(1)}% utilisés
-                </p>
-              </Card>
-
-              <Card className="p-6 bg-white shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium text-gray-500">Limite quotidienne</h3>
-                  <div className="p-2 bg-gray-50 rounded-full">
-                    <div className="w-2 h-2 rounded-full bg-gray-500" />
-                  </div>
-                </div>
-                <p className="text-3xl font-bold text-gray-900 mt-2">1000</p>
-                <p className="text-sm text-gray-400 mt-1">
-                  Réinitialisation quotidienne
-                </p>
-              </Card>
+    <div className="flex flex-col h-full w-full p-6">
+      <div className="grid gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="p-4 bg-white shadow-sm">
+            <h3 className="text-sm font-medium text-gray-500">Appels restants</h3>
+            <div className="mt-2">
+              <div className="text-3xl font-bold text-green-600">
+                {stats.api_calls_remaining}
+              </div>
+              <p className="text-sm text-gray-400 mt-1">
+                sur 1000 appels totaux
+              </p>
             </div>
+          </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-              <Card className="p-6 bg-white shadow-sm">
-                <h2 className="text-lg font-semibold mb-4">Répartition des appels</h2>
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={pieData}
-                        innerRadius={60}
-                        outerRadius={100}
-                        paddingAngle={5}
-                        dataKey="value"
-                      >
-                        {pieData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </Card>
-
-              <Card className="p-6 bg-white shadow-sm">
-                <h2 className="text-lg font-semibold mb-4">Historique d'utilisation</h2>
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={[
-                      { name: "Aujourd'hui", utilisés: usedCalls, restants: stats.api_calls_remaining }
-                    ]}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Bar dataKey="utilisés" stackId="a" fill="#4F46E5" name="Appels utilisés" />
-                      <Bar dataKey="restants" stackId="a" fill="#10B981" name="Appels restants" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </Card>
+          <Card className="p-4 bg-white shadow-sm">
+            <h3 className="text-sm font-medium text-gray-500">Appels utilisés</h3>
+            <div className="mt-2">
+              <div className="text-3xl font-bold text-blue-600">
+                {usedCalls}
+              </div>
+              <p className="text-sm text-gray-400 mt-1">
+                {((usedCalls / 1000) * 100).toFixed(1)}% utilisés
+              </p>
             </div>
-          </div>
+          </Card>
+
+          <Card className="p-4 bg-white shadow-sm">
+            <h3 className="text-sm font-medium text-gray-500">Limite quotidienne</h3>
+            <div className="mt-2">
+              <div className="text-3xl font-bold">
+                1000
+              </div>
+              <p className="text-sm text-gray-400 mt-1">
+                Réinitialisation quotidienne
+              </p>
+            </div>
+          </Card>
         </div>
+
+        <Card className="p-4 bg-white shadow-sm">
+          <div>
+            <h3 className="text-base font-medium">Utilisation des appels API</h3>
+            <p className="text-sm text-gray-500">Répartition des appels utilisés et restants</p>
+          </div>
+          
+          <div className="h-[200px] w-full mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} barSize={20}>
+                <CartesianGrid 
+                  strokeDasharray="3 3" 
+                  vertical={false}
+                  stroke="#E5E7EB"
+                />
+                <XAxis
+                  dataKey="période"
+                  tickLine={false}
+                  axisLine={false}
+                  fontSize={12}
+                />
+                <Tooltip 
+                  cursor={{ fill: 'transparent' }}
+                  contentStyle={{ 
+                    backgroundColor: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                  }}
+                  formatter={(value, name) => {
+                    return [`${value}`, name === 'utilisés' ? 'utilisés' : 'restants']
+                  }}
+                  labelStyle={{
+                    color: '#6B7280',
+                    fontSize: '12px'
+                  }}
+                />
+                <Bar 
+                  dataKey="utilisés" 
+                  fill="#4F46E5" 
+                  radius={[2, 2, 0, 0]}
+                  stackId="a"
+                />
+                <Bar 
+                  dataKey="restants" 
+                  fill="#10B981" 
+                  radius={[2, 2, 0, 0]}
+                  stackId="a"
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="mt-4 text-sm">
+            <div className="flex items-center gap-2 text-gray-700">
+              <span>{stats.api_calls_remaining} appels API disponibles</span>
+              <TrendingUp className="h-4 w-4" />
+            </div>
+            <div className="text-gray-500 text-xs">
+              Limite quotidienne de 1000 appels
+            </div>
+          </div>
+        </Card>
       </div>
     </div>
   );
