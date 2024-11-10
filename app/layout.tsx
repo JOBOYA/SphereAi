@@ -4,6 +4,7 @@ import Script from "next/script";
 import { Metadata } from "next";
 import localFont from "next/font/local";
 import { AuthProvider } from '@/src/app/contexts/AuthContext';
+import { LanguageProvider } from '@/contexts/LanguageContext';
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://clerk-next-app.vercel.app/"),
@@ -48,9 +49,11 @@ export default function RootLayout({
         }}
       >
         <body className={`min-h-screen flex flex-col antialiased`}>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
+          <LanguageProvider>
+            <AuthProvider>
+              {children}
+            </AuthProvider>
+          </LanguageProvider>
         </body>
       </ClerkProvider>
 

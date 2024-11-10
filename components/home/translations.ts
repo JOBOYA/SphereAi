@@ -1,176 +1,205 @@
-import { Language } from "prism-react-renderer";
+export type Language = 'en' | 'fr' | 'es';
 
+type Translations = {
+  [key in Language]: {
+    title: string;
+    subtitle: string;
+    description: string;
+    features: string;
+    featuresTitle: string;
+    pricing: string;
+    pricingDescription: string;
+    getStarted: string;
+    getStartedDescription: string;
+    dashboard: string;
+    liveDemo: string;
+    liveDemoDescription: string;
+    ready: string;
+    join: string;
+    stayUpdated: string;
+    newsletter: string;
+    notifyMe: string;
+    emailPlaceholder: string;
+    pricingPlans: Array<{
+      name: string;
+      description: string;
+      price: string;
+      features: string[];
+    }>;
+  };
+};
 
-
-export const translations: Record<Language, {
-  title: string;
-  subtitle: string;
-  description: string;
-  getStarted: string;
-  dashboard: string;
-  liveDemo: string;
-  features: string;
-  featuresTitle: string;
-  pricing: string;
-  pricingDescription: string;
-  ready: string;
-  join: string;
-  stayUpdated: string;
-  newsletter: string;
-  notifyMe: string;
-  emailPlaceholder: string;
-  apiIntegration: string;
-  easyIntegration: string;
-  advancedAiModels: string;
-  scalableInfrastructure: string;
-  cloudArchitecture: string;
-  privacyFirst: string;
-  dataSecurity: string;
-  realTimeProcessing: string;
-  optimizedPipeline: string;
-  pricingPlans: Array<{ name: string; price: string; description: string; features: string[] }>;
-}> = {
-  en: {
-    title: "Transform Your Workflow with",
-    subtitle: "AI-Powered Intelligence",
-    description: "Harness the power of artificial intelligence to automate tasks, optimize processes, and make data-driven decisions fast for modern teams.",
-    getStarted: "Get Started",
-    dashboard: "Dashboard",
-    liveDemo: "Live Demo",
-    features: "Features",
-    featuresTitle: "Powerful Features for Modern Teams",
-    pricing: "Choose the Perfect Plan for Your Team",
-    pricingDescription: "Select a plan that fits your needs and scale as you grow",
-    ready: "Ready to Transform Your Workflow?",
-    join: "Join thousands of teams already using AISpere.",
-    stayUpdated: "Stay Updated",
-    newsletter: "Get the latest news and updates from AISpere delivered straight to your inbox.",
-    notifyMe: "Notify me",
-    emailPlaceholder: "Enter your email",
-    apiIntegration: "API Integration",
-    easyIntegration: "Easy integration with your existing tools and workflows",
-    advancedAiModels: "Advanced AI Models",
-    scalableInfrastructure: "Scalable Infrastructure",
-    cloudArchitecture: "Cloud Architecture",
-    privacyFirst: "Privacy First",
-    dataSecurity: "Data Security",
-    realTimeProcessing: "Real-Time Processing",
-    optimizedPipeline: "Optimized Pipeline",
-    pricingPlans: [
-      {
-        name: "Starter",
-        price: "$29",
-        description: "Perfect for small teams and startups",
-        features: ["Up to 5 team members", "Basic AI assistance", "10 GB storage", "Email support"]
-      },
-      {
-        name: "Pro",
-        price: "$99",
-        description: "Ideal for growing businesses",
-        features: ["Up to 20 team members", "Advanced AI features", "50 GB storage", "Priority support"]
-      },
-      {
-        name: "Enterprise",
-        price: "Custom",
-        description: "For large organizations with specific needs",
-        features: ["Unlimited team members", "Custom AI solutions", "Unlimited storage", "24/7 dedicated support"]
-      },
-    ]
-  },
+export const translations: Translations = {
   fr: {
-    title: "Transformez votre flux de travail avec",
-    subtitle: "Intelligence alimentée par l'IA",
-    description: "Exploitez la puissance de l'intelligence artificielle pour automatiser les tâches, optimiser les processus et prendre des décisions basées sur les données rapidement pour les équipes modernes.",
-    getStarted: "Commencer",
-    dashboard: "Tableau de bord",
-    liveDemo: "Démo en direct",
+    title: "Sphere AI",
+    subtitle: "L'Intelligence Artificielle au service de votre créativité",
+    description: "Explorez les possibilités infinies de l'IA avec notre plateforme intuitive et puissante. Créez, innovez et transformez vos idées en réalité.",
     features: "Fonctionnalités",
-    featuresTitle: "Fonctionnalités puissantes pour les équipes modernes",
-    pricing: "Choisissez le plan parfait pour votre équipe",
-    pricingDescription: "Sélectionnez un plan qui correspond à vos besoins et évoluez à mesure que vous grandissez",
-    ready: "Prêt à transformer votre flux de travail ?",
-    join: "Rejoignez des milliers d'équipes qui utilisent déjà AISpere.",
+    featuresTitle: "Une suite complète d'outils IA",
+    pricing: "Tarification",
+    pricingDescription: "Des plans adaptés à tous vos besoins",
+    getStarted: "Commencer",
+    getStartedDescription: "Commencez à utiliser Sphere AI dès aujourd'hui et transformez vos idées en réalité",
+    dashboard: "Tableau de bord",
+    liveDemo: "Voir la démo",
+    liveDemoDescription: "Essayez notre plateforme en temps réel et découvrez la puissance de l'IA",
+    ready: "Prêt à commencer ?",
+    join: "Rejoignez la révolution IA",
     stayUpdated: "Restez informé",
-    newsletter: "Recevez les dernières nouvelles et mises à jour d'AISpere directement dans votre boîte de réception.",
-    notifyMe: "Me notifier",
-    emailPlaceholder: "Entrez votre email",
-    apiIntegration: "Intégration API",
-    easyIntegration: "Intégration facile avec vos outils et workflows existants",
-    advancedAiModels: "Modèles d'IA avancés",
-    scalableInfrastructure: "Infrastructure évolutive",
-    cloudArchitecture: "Architecture en cloud",
-    privacyFirst: "Confidentialité d'abord",
-    dataSecurity: "Sécurité des données",
-    realTimeProcessing: "Traitement en temps réel",
-    optimizedPipeline: "Pipeline optimisé",
+    newsletter: "Inscrivez-vous pour recevoir nos dernières actualités",
+    notifyMe: "M'inscrire",
+    emailPlaceholder: "Votre email",
     pricingPlans: [
       {
-        name: "Débutant",
-        price: "29€",
-        description: "Parfait pour les petites équipes et les startups",
-        features: ["Jusqu'à 5 membres d'équipe", "Assistance IA de base", "10 Go de stockage", "Support par e-mail"]
+        name: "Gratuit",
+        description: "Pour découvrir nos services",
+        price: "0€",
+        features: [
+          "5 générations par jour",
+          "Accès aux modèles de base",
+          "Support communautaire",
+          "Mises à jour régulières"
+        ]
       },
       {
         name: "Pro",
-        price: "99€",
-        description: "Idéal pour les entreprises en croissance",
-        features: ["Jusqu'à 20 membres d'équipe", "Fonctionnalités avancées d'IA", "50 Go de stockage", "Support prioritaire"]
+        description: "Pour les professionnels",
+        price: "29€",
+        features: [
+          "Générations illimitées",
+          "Accès à tous les modèles",
+          "Support prioritaire",
+          "API disponible",
+          "Personnalisation avancée"
+        ]
       },
       {
         name: "Entreprise",
-        price: "Personnalisé",
-        description: "Pour les grandes organisations ayant des besoins spécifiques",
-        features: ["Membres illimités", "Solutions IA sur mesure", "Stockage illimité", "Support dédié 24/7"]
-      },
+        description: "Solutions sur mesure",
+        price: "Sur devis",
+        features: [
+          "Déploiement personnalisé",
+          "Modèles sur mesure",
+          "Support dédié 24/7",
+          "Formation incluse",
+          "SLA garanti"
+        ]
+      }
     ]
   },
-  es: {
-    title: "Transforma tu flujo de trabajo con",
-    subtitle: "Inteligencia impulsada por IA",
-    description: "Aprovecha el poder de la inteligencia artificial para automatizar tareas, optimizar procesos y tomar decisiones basadas en datos rápidamente para equipos modernos.",
-    getStarted: "Comenzar",
-    dashboard: "Panel de control",
-    liveDemo: "Demo en vivo",
-    features: "Características",
-    featuresTitle: "Potentes características para equipos modernos",
-    pricing: "Elige el plan perfecto para tu equipo",
-    pricingDescription: "Selecciona un plan que se adapte a tus necesidades y escala a medida que creces",
-    ready: "¿Listo para transformar tu flujo de trabajo?",
-    join: "Únete a miles de equipos que ya usan AISpere.",
-    stayUpdated: "Mantente actualizado",
-    newsletter: "Recibe las últimas noticias y actualizaciones de AISpere directamente en tu bandeja de entrada.",
-    notifyMe: "Notificarme",
-    emailPlaceholder: "Ingresa tu correo electrónico",
-    apiIntegration: "Integración de API",
-    easyIntegration: "Integración fácil con tus herramientas y flujos de trabajo existentes",
-    advancedAiModels: "Modelos de IA avanzados",
-    scalableInfrastructure: "Infraestructura escalable",
-    cloudArchitecture: "Arquitectura en la nube",
-    privacyFirst: "Privacidad primero",
-    dataSecurity: "Seguridad de datos",
-    realTimeProcessing: "Procesamiento en tiempo real",
-    optimizedPipeline: "Pipeline optimizado",
+  en: {
+    title: "Sphere AI",
+    subtitle: "AI-Powered Creativity at Your Fingertips",
+    description: "Explore endless AI possibilities with our intuitive and powerful platform. Create, innovate, and transform your ideas into reality.",
+    features: "Features",
+    featuresTitle: "Powerful Features for Modern Teams",
+    pricing: "Pricing",
+    pricingDescription: "Select a plan that fits your needs and scale as you grow",
+    getStarted: "Get Started",
+    getStartedDescription: "Start using Sphere AI today and transform your ideas into reality",
+    dashboard: "Dashboard",
+    liveDemo: "Live Demo",
+    liveDemoDescription: "Try our platform in real-time and discover the power of AI",
+    ready: "Ready to Transform Your Workflow?",
+    join: "Join thousands of teams already using Sphere AI.",
+    stayUpdated: "Stay Updated",
+    newsletter: "Get the latest news and updates delivered straight to your inbox.",
+    notifyMe: "Notify me",
+    emailPlaceholder: "Enter your email",
     pricingPlans: [
       {
-        name: "Inicial",
-        price: "$29",
-        description: "Perfecto para equipos pequeños y startups",
-        features: ["Hasta 5 miembros de equipo", "Asistencia de IA básica", "10 GB de almacenamiento", "Soporte por correo electrónico"]
+        name: "Free",
+        description: "Perfect for trying out our services",
+        price: "$0",
+        features: [
+          "5 generations per day",
+          "Access to basic models",
+          "Community support",
+          "Regular updates"
+        ]
       },
       {
         name: "Pro",
-        price: "$99",
-        description: "Ideal para empresas en crecimiento",
-        features: ["Hasta 20 miembros de equipo", "Funciones avanzadas de IA", "50 GB de almacenamiento", "Soporte prioritario"]
+        description: "For professionals",
+        price: "$29",
+        features: [
+          "Unlimited generations",
+          "Access to all models",
+          "Priority support",
+          "API access",
+          "Advanced customization"
+        ]
+      },
+      {
+        name: "Enterprise",
+        description: "Custom solutions for your business",
+        price: "Custom",
+        features: [
+          "Custom deployment",
+          "Custom models",
+          "24/7 dedicated support",
+          "Training included",
+          "SLA guaranteed"
+        ]
+      }
+    ]
+  },
+  es: {
+    title: "Sphere AI",
+    subtitle: "La Inteligencia Artificial al servicio de tu creatividad",
+    description: "Explora las posibilidades infinitas de la IA con nuestra plataforma intuitiva y potente.",
+    features: "Características",
+    featuresTitle: "Potentes características para equipos modernos",
+    pricing: "Precios",
+    pricingDescription: "Selecciona un plan que se adapte a tus necesidades",
+    getStarted: "Comenzar",
+    getStartedDescription: "Comienza a usar Sphere AI hoy y transforma tus ideas en realidad",
+    dashboard: "Panel de control",
+    liveDemo: "Demo en vivo",
+    liveDemoDescription: "Prueba nuestra plataforma en tiempo real y descubre el poder de la IA",
+    ready: "¿Listo para transformar tu flujo de trabajo?",
+    join: "Únete a miles de equipos que ya usan Sphere AI",
+    stayUpdated: "Mantente actualizado",
+    newsletter: "Recibe las últimas noticias y actualizaciones directamente en tu correo.",
+    notifyMe: "Notificarme",
+    emailPlaceholder: "Tu correo electrónico",
+    pricingPlans: [
+      {
+        name: "Gratis",
+        description: "Perfecto para probar nuestros servicios",
+        price: "$0",
+        features: [
+          "5 generaciones por día",
+          "Acceso a modelos básicos",
+          "Soporte comunitario",
+          "Actualizaciones regulares"
+        ]
+      },
+      {
+        name: "Pro",
+        description: "Para profesionales",
+        price: "$29",
+        features: [
+          "Generaciones ilimitadas",
+          "Acceso a todos los modelos",
+          "Soporte prioritario",
+          "Acceso API",
+          "Personalización avanzada"
+        ]
       },
       {
         name: "Empresa",
+        description: "Soluciones personalizadas para tu negocio",
         price: "Personalizado",
-        description: "Para grandes organizaciones con necesidades específicas",
-        features: ["Miembros ilimitados", "Soluciones de IA personalizadas", "Almacenamiento ilimitado", "Soporte dedicado 24/7"]
-      },
+        features: [
+          "Implementación personalizada",
+          "Modelos personalizados",
+          "Soporte dedicado 24/7",
+          "Capacitación incluida",
+          "SLA garantizado"
+        ]
+      }
     ]
   }
 };
-export type { Language };
 
