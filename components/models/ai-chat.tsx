@@ -16,6 +16,9 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import ReactMarkdown from 'react-markdown';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 
 interface Message {
   id: string;
@@ -147,6 +150,38 @@ export function AIChat() {
     }
   };
 
+  const MarkdownMessage = ({ content }: { content: string }) => {
+    return (
+      <ReactMarkdown
+        components={{
+          code(props) {
+            const { children, className, ...rest } = props;
+            const match = /language-(\w+)/.exec(className || '');
+            const isInline = !match;
+            
+            return isInline ? (
+              <code className="bg-gray-100 rounded px-1 py-0.5" {...rest}>
+                {children}
+              </code>
+            ) : (
+              <SyntaxHighlighter
+                {...rest as any}
+                style={oneDark}
+                language={match[1]}
+                PreTag="div"
+                className="rounded-md my-2"
+              >
+                {String(children).replace(/\n$/, '')}
+              </SyntaxHighlighter>
+            );
+          }
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    );
+  };
+
   return (
     <Theme appearance="light" accentColor="blue" radius="large">
       <div className="flex flex-col h-full w-full">
@@ -197,6 +232,25 @@ export function AIChat() {
                           ${message.role === 'user' ? 'items-end' : 'items-start'}
                         `}
                       >
+                        {/* Indicateur de copie pour les messages de l'IA */}
+                        {message.role === 'assistant' && (
+                          <div 
+                            className="absolute top-1 right-1 z-10"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCopyMessage(message.content, message.id);
+                            }}
+                          >
+                            <div className="p-1.5 hover:bg-gray-200 rounded-md cursor-pointer">
+                              {copiedMessageId === message.id ? (
+                                <Check size={16} className="text-green-500" />
+                              ) : (
+                                <Copy size={16} className="text-gray-400 hover:text-gray-600" />
+                              )}
+                            </div>
+                          </div>
+                        )}
+
                         {/* Message principal */}
                         <div className={`
                           px-4 py-2 shadow-sm relative group cursor-pointer
@@ -208,25 +262,12 @@ export function AIChat() {
                         onClick={message.role === 'assistant' ? () => handleCopyMessage(message.content, message.id) : undefined}
                         >
                           <div className="text-sm whitespace-pre-wrap break-words">
-                            {message.content}
+                            {message.role === 'assistant' ? (
+                              <MarkdownMessage content={message.content} />
+                            ) : (
+                              message.content
+                            )}
                           </div>
-                          
-                          {/* Indicateur de copie pour les messages de l'IA */}
-                          {message.role === 'assistant' && (
-                            <div className="absolute bottom-2 right-2 text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                              {copiedMessageId === message.id ? (
-                                <span className="flex items-center gap-1">
-                                  <Check size={12} />
-                                  Copié
-                                </span>
-                              ) : (
-                                <span className="flex items-center gap-1">
-                                  <Copy size={12} />
-                                  Cliquer pour copier
-                                </span>
-                              )}
-                            </div>
-                          )}
                         </div>
 
                         {/* Timestamp en petit sous le message */}

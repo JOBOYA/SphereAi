@@ -21,29 +21,48 @@ interface ApiCallStats {
   status: string;
 }
 
+interface ApiCallLogs {
+  dates: string[];
+  call_counts: number[];
+}
+
 export function ApiLimits() {
   const [stats, setStats] = useState<ApiCallStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [callLogs, setCallLogs] = useState<ApiCallLogs>({ dates: [], call_counts: [] });
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
         const accessToken = localStorage.getItem('accessToken');
-        const response = await fetch('https://appai.charlesagostinelli.com/api/apiCall/', {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`
-          }
-        });
         
-        if (!response.ok) throw new Error('Erreur lors de la récupération des statistiques');
+        const [statsResponse, logsResponse] = await Promise.all([
+          fetch('https://appai.charlesagostinelli.com/api/apiCall/', {
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+          }),
+          fetch('https://appai.charlesagostinelli.com/api/api-call-logs/', {
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+          })
+        ]);
         
-        const data = await response.json();
-        setStats(data);
+        if (!statsResponse.ok || !logsResponse.ok) 
+          throw new Error('Erreur lors de la récupération des données');
         
-        // Vérifier si l'utilisateur a presque atteint sa limite
-        if (data.api_calls_remaining <= 5) {
+        const statsData = await statsResponse.json();
+        const logsData = await logsResponse.json();
+
+        const today = new Date().toISOString().split('T')[0];
+        if (!logsData.dates.includes(today)) {
+          logsData.dates.push(today);
+          logsData.call_counts.push(1000 - statsData.api_calls_remaining);
+        }
+        
+        setStats(statsData);
+        setCallLogs(logsData);
+        
+        if (statsData.api_calls_remaining <= 5) {
           setShowUpgradeModal(true);
         }
       } catch (err) {
@@ -77,13 +96,17 @@ export function ApiLimits() {
   }
 
   const usedCalls = 1000 - stats.api_calls_remaining;
-  const chartData = [
-    {
-      période: "Aujourd'hui",
-      utilisés: usedCalls,
-      restants: stats.api_calls_remaining
-    }
-  ];
+  const chartData = callLogs.dates
+    .map((date, index) => ({
+      période: date === new Date().toISOString().split('T')[0] ? "Aujourd'hui" : date,
+      utilisés: callLogs.call_counts[index],
+      restants: 1000 - callLogs.call_counts[index]
+    }))
+    .sort((a, b) => {
+      if (a.période === "Aujourd'hui") return 1;
+      if (b.période === "Aujourd'hui") return -1;
+      return new Date(b.période).getTime() - new Date(a.période).getTime();
+    });
 
   return (
     <>
