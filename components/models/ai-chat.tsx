@@ -47,6 +47,7 @@ export function AIChat() {
     isVisible: false,
     code: null
   });
+  const [isGenerating, setIsGenerating] = useState(false);
   const { accessToken } = useAuth();
   const { user } = useUser();
 
@@ -124,26 +125,41 @@ export function AIChat() {
     setMessages(prev => [...prev, newMessage]);
     setInputMessage('');
     setIsLoading(true);
+    setIsGenerating(true);
 
     try {
       const responseMessage = await sendMessage(inputMessage);
+      console.log("Response from AI:", responseMessage); // Debug log
       
       if (responseMessage) {
+        let displayMessage = responseMessage;
+        
+        console.log("Checking for JSX code...");
+        const hasJSX = containsJSXCode(responseMessage);
+        console.log("Has JSX:", hasJSX);
+        
+        if (hasJSX) {
+          const code = extractJSXCode(responseMessage);
+          console.log("Extracted code:", code); // Debug log
+          displayMessage = responseMessage.replace(/```(?:jsx|tsx)[\s\S]*?```/g, '');
+          
+          if (code) {
+            console.log("Setting preview with code"); // Debug log
+            setPreview({
+              isVisible: true,
+              code
+            });
+          }
+        }
+
         const aiResponse: Message = {
           id: (Date.now() + 1).toString(),
-          content: responseMessage,
+          content: displayMessage,
           role: 'assistant',
           timestamp: new Date(),
         };
+        
         setMessages(prev => [...prev, aiResponse]);
-
-        if (containsJSXCode(responseMessage)) {
-          const code = extractJSXCode(responseMessage);
-          setPreview({
-            isVisible: true,
-            code
-          });
-        }
       }
     } catch (error) {
       console.error('❌ Erreur:', error);
@@ -156,6 +172,7 @@ export function AIChat() {
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
+      setIsGenerating(false);
     }
   };
 
@@ -214,16 +231,24 @@ export function AIChat() {
     
     if (!match) return null;
     
+    // Garder le code TypeScript/TSX tel quel
     let code = match[1].trim();
-    code = code.replace(/import.*?;/g, '');
-  
-    if (code.startsWith('function') || code.startsWith('const')) {
-      const componentName = code.match(/(?:function|const)\s+(\w+)/)?.[1] || 'Component';
-      if (!code.includes('render(')) {
-        code = `${code}\n\nrender(<${componentName} />);`;
-      }
+
+    // S'assurer que le code est un composant React valide
+    if (!code.includes('function') && !code.includes('const')) {
+      code = `
+        interface ComponentProps {
+          children?: React.ReactNode;
+        }
+
+        function Component({ children }: ComponentProps) {
+          return (
+            ${code}
+          );
+        }
+      `;
     }
-    
+
     return code;
   };
   
@@ -374,7 +399,12 @@ export function AIChat() {
                   </div>
                 </div>
                 <div className="flex-1 overflow-hidden">
-                  {preview.code && <LivePreview code={preview.code} />}
+                  {preview.code && (
+                    <LivePreview 
+                      code={preview.code} 
+                      isGenerating={isGenerating}
+                    />
+                  )}
                 </div>
               </div>
             )}
