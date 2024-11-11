@@ -2,6 +2,7 @@ import React from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import * as Babel from '@babel/standalone';
+import Link from 'next/link';
 
 interface LivePreviewProps {
   code: string;
@@ -10,13 +11,22 @@ interface LivePreviewProps {
 export function LivePreview({ code }: LivePreviewProps) {
   const renderComponent = () => {
     try {
-      // Nettoyer le code
+      // Nettoyer le code plus efficacement
       const cleanCode = code
+        // Supprimer les imports
         .replace(/import.*?;/g, '')
+        // Supprimer les exports
         .replace(/export\s+default\s+/g, '')
+        // Convertir les déclarations de type FC
+        .replace(/:\s*FC<.*?>/g, '')
         .replace(/:\s*React\.FC<.*?>/g, '')
-        .replace(/type\s+.*?;\s*/g, '')
-        .replace(/interface\s+.*?\}\s*/g, '')
+        // Supprimer les interfaces et types
+        .replace(/interface\s+\w+\s*{[^}]*}/g, '')
+        .replace(/type\s+\w+\s*=\s*{[^}]*}/g, '')
+        // Convertir les props typées
+        .replace(/<PropsWithChildren<.*?>>/g, '')
+        // Nettoyer les annotations de type restantes
+        .replace(/:\s*\w+(\[\])?/g, '')
         .trim();
 
       // Transpiler le code JSX en JavaScript
@@ -24,27 +34,61 @@ export function LivePreview({ code }: LivePreviewProps) {
         presets: ['react'],
       }).code;
 
-      // Créer le composant
+      // Détecter le nom du composant
+      const componentNameMatch = cleanCode.match(/(?:function|const)\s+(\w+)/);
+      const componentName = componentNameMatch ? componentNameMatch[1] : null;
+
+      if (!componentName) {
+        throw new Error("Aucun composant React trouvé dans le code");
+      }
+
+      // Créer le composant avec un wrapper pour les props et tous les composants nécessaires
       const createComponent = new Function(
         'React',
         'useState',
         'useEffect',
+        'Link',
         `
+          const { createElement } = React;
           ${transformedCode}
-          return CardTwitter || Card;
+          const ComponentWrapper = (props) => {
+            return createElement(${componentName}, props);
+          };
+          return ComponentWrapper;
         `
       );
 
-      const Component = createComponent(React, React.useState, React.useEffect);
+      const Component = createComponent(
+        React, 
+        React.useState, 
+        React.useEffect,
+        // Simuler le composant Link pour le preview
+        ({ href, children, ...props }: { href: string; children: React.ReactNode; props: any }) => (
+          <a 
+            href={href} 
+            {...props}
+            onClick={(e) => {
+              e.preventDefault();
+              console.log('Navigation vers:', href);
+            }}
+          >
+            {children}
+          </a>
+        )
+      );
 
-      // Props de test
+      // Props de test adaptées pour une navbar
       const testProps = {
-        username: "JohnDoe",
-        name: "John Doe",
-        tweet: "Ceci est un tweet d'exemple!",
-        image: "https://picsum.photos/500/300",
-        date: "Il y a 2h",
-        content: "Contenu du tweet"
+        links: [
+          { href: '/', label: 'Accueil' },
+          { href: '/about', label: 'À propos' },
+          { href: '/contact', label: 'Contact' },
+        ],
+        logo: 'Logo',
+        isLoggedIn: true,
+        user: { name: 'John Doe' },
+        onLogin: () => console.log('Login clicked'),
+        onLogout: () => console.log('Logout clicked'),
       };
 
       return <Component {...testProps} />;
