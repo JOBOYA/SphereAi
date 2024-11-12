@@ -82,7 +82,7 @@ export function AIChat() {
   const { user } = useUser();
   const [typingText, setTypingText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const typingSpeed = 10; // millisecondes entre chaque caractère
+  const typingSpeed = 5; // millisecondes entre chaque caractère
   const [loadingPhase, setLoadingPhase] = useState<'dots' | 'typing' | 'preview' | null>(null);
 
   useEffect(() => {
@@ -102,7 +102,7 @@ export function AIChat() {
             return;
         }
 
-        const response = await fetch('https://appai.charlesagostinelli.com/api/chat/', {
+        const response = await fetch('https://appai.charlesagostinelli.com/api/chatMistral/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -206,6 +206,9 @@ export function AIChat() {
     setLoadingPhase('dots');
 
     try {
+      // Réduire le temps d'affichage des points à 500ms
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       const responseMessage = await sendMessage(inputMessage);
       
       if (responseMessage) {
@@ -217,23 +220,37 @@ export function AIChat() {
           displayMessage = responseMessage.replace(/```(?:jsx|tsx)[\s\S]*?```/g, '');
         }
 
+        // Commencer la saisie du texte et du code simultanément
         setLoadingPhase('typing');
-        simulateTyping(displayMessage);
         
-        setMessages(prev => prev.map(msg => 
-          msg.id === tempAiMessage.id 
-            ? { ...msg, content: displayMessage }
-            : msg
-        ));
-
         if (codeToPreview) {
-          await new Promise(resolve => setTimeout(resolve, displayMessage.length * typingSpeed + 500));
-          setLoadingPhase('preview');
+          // Mettre à jour immédiatement le preview avec le code
           setPreview({
             isVisible: true,
             code: codeToPreview
           });
         }
+
+        // Simuler la saisie plus rapidement
+        let currentIndex = 0;
+        const typingInterval = setInterval(() => {
+          if (currentIndex < displayMessage.length) {
+            setTypingText(displayMessage.slice(0, currentIndex + 1));
+            currentIndex++;
+          } else {
+            clearInterval(typingInterval);
+            // Une fois la saisie terminée, afficher le preview final
+            if (codeToPreview) {
+              setLoadingPhase('preview');
+            }
+          }
+        }, 5); // Réduire le délai entre chaque caractère à 5ms
+
+        setMessages(prev => prev.map(msg => 
+          msg.id === tempAiMessage.id 
+            ? { ...msg, content: displayMessage }
+            : msg
+        ));
       }
     } catch (error) {
       console.error('❌ Erreur:', error);
@@ -303,17 +320,12 @@ export function AIChat() {
     
     if (!match) return null;
     
-    // Garder le code TypeScript/TSX tel quel
     let code = match[1].trim();
 
-    // S'assurer que le code est un composant React valide
+    // Si le code ne contient pas de composant React, l'envelopper dans un composant
     if (!code.includes('function') && !code.includes('const')) {
       code = `
-        interface ComponentProps {
-          children?: React.ReactNode;
-        }
-
-        function Component({ children }: ComponentProps) {
+        function Component(props) {
           return (
             ${code}
           );

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import * as Babel from '@babel/standalone';
@@ -12,132 +12,149 @@ interface LivePreviewProps {
 
 type Tab = 'preview' | 'code';
 
+// Améliorons la fonction transformTypeScriptToJavaScript
+const transformTypeScriptToJavaScript = (code: string): string => {
+  try {
+    // Supprimer les commentaires de type
+    let cleanCode = code
+      .replace(/\/\/ Types.*$/gm, '')
+      .replace(/\/\/ Interface.*$/gm, '')
+      .replace(/\/\*[\s\S]*?\*\//gm, '');
+
+    // Supprimer les blocs de types et interfaces
+    cleanCode = cleanCode
+      .replace(/interface\s+\w+\s*{[\s\S]*?}/g, '')
+      .replace(/type\s+\w+\s*=[\s\S]*?(?=\n\w|$)/g, '')
+      .replace(/\[\s*\]\s*;\s*}/g, '') // Supprimer les tableaux vides suivis d'une accolade
+      .replace(/\[\s*\]\s*;/g, ''); // Supprimer les tableaux vides
+
+    // Nettoyer les déclarations de composants React
+    cleanCode = cleanCode
+      .replace(/const\s+(\w+)\.FC\s*=/g, 'const $1 =') // Remplacer .FC par une déclaration normale
+      .replace(/:\s*React\.FC(\<.*?\>)?/g, '') // Supprimer les types React.FC
+      .replace(/:\s*FC(\<.*?\>)?/g, '') // Supprimer les types FC
+      .replace(/:\s*{\s*[^}]*}/g, '') // Supprimer les types d'objets
+      .replace(/:\s*\w+(\[\])?/g, '') // Supprimer les annotations de type simples
+      .replace(/<[^>]+>/g, '') // Supprimer les génériques
+      .replace(/export\s+default\s+/g, '') // Supprimer export default
+      .replace(/export\s+/g, ''); // Supprimer export
+
+    // Nettoyer les lignes vides multiples et les espaces
+    cleanCode = cleanCode
+      .replace(/\n\s*\n\s*\n/g, '\n\n')
+      .replace(/^\s*[\r\n]/gm, '')
+      .trim();
+
+    // Extraire le nom du composant
+    const functionMatch = cleanCode.match(/function\s+([A-Z]\w+)/);
+    const constMatch = cleanCode.match(/const\s+([A-Z]\w+)\s*=/);
+    const componentName = functionMatch?.[1] || constMatch?.[1] || 'Component';
+
+    // Envelopper le code dans une structure valide
+    cleanCode = `
+      const { useState, useEffect, Fragment } = React;
+      
+      // Composant principal
+      ${cleanCode}
+      
+      // Exporter le composant
+      return typeof ${componentName} === 'function' ? ${componentName} : (() => ${componentName});
+    `;
+
+    console.log('Code nettoyé:', cleanCode);
+    return cleanCode;
+  } catch (error) {
+    console.error('Erreur lors de la transformation du code:', error);
+    return code;
+  }
+};
+
 export function LivePreview({ code, isGenerating = false }: LivePreviewProps) {
   const [liveCode, setLiveCode] = useState(code);
   const [activeTab, setActiveTab] = useState<Tab>('preview');
   const [error, setError] = useState<string | null>(null);
-  const [debugInfo, setDebugInfo] = useState<{
-    code: string | null;
-    error: Error | null;
-  }>({ code: null, error: null });
+  const [renderedComponent, setRenderedComponent] = useState<React.ReactNode | null>(null);
 
-  useEffect(() => {
-    setLiveCode(code);
-    setError(null);
-    setDebugInfo({ code: null, error: null });
-  }, [code]);
-
-  const renderComponent = () => {
-    let transformedCode = '';
-    
+  // Fonction pour compiler et rendre le composant
+  const compileAndRender = useCallback((sourceCode: string) => {
     try {
-      // Nettoyer le code
-      let cleanCode = code
-        .replace(/import\s+.*?;/g, '')
-        .replace(/export\s+default\s+/g, '')
-        .replace(/export\s+{[^}]+};?/g, '')
-        .replace(/export\s+/g, '')
-        .trim();
+      console.log('Code source original:', sourceCode);
+      
+      // Transformer le code
+      const cleanCode = transformTypeScriptToJavaScript(sourceCode);
+      console.log('Code nettoyé:', cleanCode);
 
-      // Extraire le nom du composant
-      const functionMatch = cleanCode.match(/function\s+([A-Z]\w+)/);
-      const constMatch = cleanCode.match(/const\s+([A-Z]\w+)\s*=/);
-      const componentName = functionMatch?.[1] || constMatch?.[1] || 'AIComponent';
-
-      // Transformer le JSX en JS avec Babel
-      transformedCode = Babel.transform(cleanCode, {
-        filename: 'component.tsx',
+      // Transformer avec Babel
+      const transformedCode = Babel.transform(cleanCode, {
         presets: ['react'],
+        filename: 'component.jsx',
         plugins: [
           ['transform-react-jsx', {
             pragma: 'React.createElement',
             pragmaFrag: 'React.Fragment'
           }]
         ]
-      }).code;
+      }).code || '';
+      console.log('Code transformé par Babel:', transformedCode);
 
-      // Préparer le code final sans redéclarer React
-      const finalCode = `
-        const {
-          useState,
-          useEffect,
-          Fragment,
-          createElement
-        } = arguments[0];
-        
-        ${transformedCode}
+      // Créer le composant avec les dépendances nécessaires
+      const createComponent = new Function('React', transformedCode);
+      const Component = createComponent(React);
 
-        return ${componentName};
-      `;
-
-      // Créer le composant
-      const Component = new Function('React', finalCode)(React);
-
-      // Props par défaut
+      // Props par défaut étendues
       const defaultProps = {
+        title: "Titre d'exemple",
+        description: "Description d'exemple",
+        imageUrl: "https://via.placeholder.com/150",
+        links: ["Accueil", "À propos", "Contact"],
         isOpen: true,
-        message: "Ceci est un message de confirmation",
-        onConfirm: () => console.log("Confirmé"),
-        onCancel: () => console.log("Annulé"),
-        className: "modern-button",
+        onClose: () => console.log("Fermer"),
+        onClick: () => console.log("Click"),
+        children: "Contenu d'exemple",
+        className: "demo-component",
         style: {
-          position: 'relative',
-          padding: '10px 20px',
-          backgroundColor: '#4F46E5',
-          color: 'white',
-          border: 'none',
-          borderRadius: '8px',
-          cursor: 'pointer',
-          transition: 'all 0.2s',
-          fontSize: '16px',
-          fontWeight: 500,
+          maxWidth: '100%',
+          margin: '0 auto'
         },
-        onClick: () => console.log("Click")
+        items: ["Item 1", "Item 2", "Item 3"],
+        user: {
+          name: "John Doe",
+          avatar: "https://via.placeholder.com/40"
+        },
+        theme: "light",
+        variant: "primary"
       };
 
       // Rendre le composant
-      return (
-        <div className="preview-content w-full h-full flex items-center justify-center">
+      setRenderedComponent(
+        <div className="preview-content w-full h-full flex items-center justify-center p-4">
           <div className="preview-wrapper relative w-full max-w-2xl">
             <Component {...defaultProps} />
           </div>
         </div>
       );
 
-    } catch (err: any) {
-      // Mettre à jour les informations de débogage de manière sûre
-      const errorInfo = {
-        code: transformedCode,
-        error: err
-      };
-      
-      // Utiliser setTimeout pour éviter la boucle de rendu
-      setTimeout(() => {
-        setDebugInfo(errorInfo);
-      }, 0);
-
-      return (
+    } catch (err) {
+      console.error('Erreur de compilation:', err);
+      setError(err instanceof Error ? err.message : 'Erreur de compilation');
+      setRenderedComponent(
         <div className="p-4 text-red-500 bg-red-50 rounded-lg">
-          <p className="font-medium mb-2">Erreur dans le composant généré:</p>
-          <pre className="text-sm whitespace-pre-wrap">
-            {err.message}
-            {err.stack && (
-              <>
-                <br/>
-                <br/>
-                Stack: {err.stack}
-                <br/>
-                <br/>
-                Code transformé:
-                <br/>
-                {debugInfo.code || 'Pas de code transformé disponible'}
-              </>
-            )}
+          <p className="font-medium mb-2">Erreur de compilation :</p>
+          <pre className="text-sm whitespace-pre-wrap overflow-auto">
+            {err instanceof Error ? err.message : 'Erreur inconnue'}
           </pre>
         </div>
       );
     }
-  };
+  }, []);
+
+  // Effet pour compiler le code quand il change
+  useEffect(() => {
+    setLiveCode(code);
+    if (code) {
+      compileAndRender(code);
+    }
+  }, [code, compileAndRender]);
 
   return (
     <div className="h-full flex flex-col">
@@ -168,14 +185,21 @@ export function LivePreview({ code, isGenerating = false }: LivePreviewProps) {
         {activeTab === 'preview' ? (
           <div className="p-4 bg-gray-50 h-full">
             {isGenerating ? (
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 animate-pulse flex items-center justify-center">
-                <div className="bg-white/90 px-4 py-2 rounded-full text-sm font-medium text-blue-600">
-                  Génération en cours...
+              <div className="h-full flex items-center justify-center">
+                <div className="text-sm text-gray-500">
+                  Génération du composant...
                 </div>
               </div>
+            ) : error ? (
+              <div className="p-4 text-red-500 bg-red-50 rounded-lg">
+                <p className="font-medium mb-2">Erreur :</p>
+                <pre className="text-sm whitespace-pre-wrap">{error}</pre>
+              </div>
+            ) : renderedComponent ? (
+              renderedComponent
             ) : (
-              <div className="bg-white p-4 rounded-lg shadow-sm h-full">
-                {renderComponent()}
+              <div className="flex items-center justify-center h-full text-gray-500">
+                En attente du code...
               </div>
             )}
           </div>
