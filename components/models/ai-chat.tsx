@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, User, Bot, Loader2, Copy, Check, Sparkles, Split } from 'lucide-react';
+import { Send, User, Bot, Loader2, Copy, Check, Sparkles, Split, Upload } from 'lucide-react';
 import * as Avatar from '@radix-ui/react-avatar';
 import { Theme } from '@radix-ui/themes';
 import '@radix-ui/themes/styles.css';
@@ -21,6 +21,9 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import dynamic from 'next/dynamic';
 import { LivePreview } from '../LivePreview';
+import { ocr } from "llama-ocr";
+import { Skeleton } from "@/components/ui/skeleton";
+import { prompts } from '@/lib/prompts';
 
 const LoadingDots: React.FC = () => (
   <div className="flex items-center space-x-2">
@@ -48,7 +51,8 @@ interface Message {
 
 interface PreviewState {
   isVisible: boolean;
-  code: string | null;
+  content: string | null;
+  type: 'text' | 'image';
 }
 
 export function AIChat() {
@@ -62,20 +66,8 @@ export function AIChat() {
   const [apiCallsRemaining, setApiCallsRemaining] = useState<number | null>(null);
   const [preview, setPreview] = useState<PreviewState>({
     isVisible: true,
-    code: `
-      function WelcomeComponent() {
-        return (
-          <div className="p-4 bg-white rounded-lg shadow-sm">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              Bienvenue dans le Preview
-            </h2>
-            <p className="text-gray-600">
-              Le code de vos composants s'affichera ici en temps réel.
-            </p>
-          </div>
-        );
-      }
-    `
+    content: null,
+    type: 'text'
   });
   const [isGenerating, setIsGenerating] = useState(false);
   const { accessToken } = useAuth();
@@ -84,6 +76,9 @@ export function AIChat() {
   const [isTyping, setIsTyping] = useState(false);
   const typingSpeed = 5; // millisecondes entre chaque caractère
   const [loadingPhase, setLoadingPhase] = useState<'dots' | 'typing' | 'preview' | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [ocrText, setOcrText] = useState<string | null>(null);
+  const [isInitialLoading, setIsInitialLoading] = useState(false);
 
   useEffect(() => {
     console.log('🔑 Token dans AIChat:', accessToken ? 'Présent' : 'Absent');
@@ -94,56 +89,63 @@ export function AIChat() {
 
   const sendMessage = async (message: string) => {
     try {
-        // Récupérer le token d'accès du localStorage
-        const accessToken = localStorage.getItem('accessToken');
+      const accessToken = localStorage.getItem('accessToken');
         
-        if (!accessToken) {
-            setError('Veuillez vous connecter pour utiliser le chat');
-            return;
+      if (!accessToken) {
+        setError('Veuillez vous connecter pour utiliser le chat');
+        return;
+      }
+
+      const contextPrompt = ocrText 
+        ? prompts.imageAnalysis
+            .replace('{text}', ocrText)
+            .replace('{question}', message)
+        : prompts.noContext;
+
+      const response = await fetch('https://appai.charlesagostinelli.com/api/chatMistral/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({ 
+          message: contextPrompt
+        })
+      });
+
+      const data = await response.json(); 
+
+      if (!response.ok) {
+        if (response.status === 503) {
+          const estimatedTime = Math.ceil(data.estimated_time * 20);
+          setError(`Le modèle se charge, veuillez patienter environ ${estimatedTime} secondes`);
+
+          setTimeout(() => {
+            return sendMessage(message);
+          }, (estimatedTime + 2) * 1000);
+          return null;
+        } else if (response.status === 403) {
+          setShowUpgradeModal(true);
+          setError('Limite d\'appels API atteinte');
+          return null;
+        } else if (response.status === 401) {
+          setError('Session expirée, veuillez vous reconnecter');
+        } else {
+          throw new Error(data.error || 'Une erreur est survenue');
         }
+        return null;
+      }
 
-        const response = await fetch('https://appai.charlesagostinelli.com/api/chatMistral/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${accessToken}`
-            },
-            body: JSON.stringify({ message })
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            if (response.status === 503) {
-                const estimatedTime = Math.ceil(data.estimated_time * 20);
-                setError(`Le modèle se charge, veuillez patienter environ ${estimatedTime} secondes`);
-
-                setTimeout(() => {
-                    return sendMessage(message);
-                }, (estimatedTime + 2) * 1000);
-                return null;
-            } else if (response.status === 403) {
-                setShowUpgradeModal(true);
-                setError('Limite d\'appels API atteinte');
-                return null;
-            } else if (response.status === 401) {
-                setError('Session expirée, veuillez vous reconnecter');
-            } else {
-                throw new Error(data.error || 'Une erreur est survenue');
-            }
-            return null;
-        }
-
-        setApiCallsRemaining(data.api_calls_remaining);
-        setError(null);
-        return data.message;
+      setApiCallsRemaining(data.api_calls_remaining);
+      setError(null);
+      return data.message;
 
     } catch (error) {
-        console.error('Erreur:', error);
-        setError('Une erreur est survenue lors de la communication avec l\'IA');
-        return null;
+      console.error('Erreur:', error);
+      setError('Une erreur est survenue lors de la communication avec l\'IA');
+      return null;
     }
-};
+  };
 
   const simulateTyping = (finalText: string) => {
     setIsTyping(true);
@@ -159,26 +161,6 @@ export function AIChat() {
         setIsTyping(false);
       }
     }, typingSpeed);
-  };
-
-  const handleLoadingSequence = async (finalText: string, code: string | null) => {
-    // Phase 1: Points de chargement
-    setLoadingPhase('dots');
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Phase 2: Simulation de la saisie
-    setLoadingPhase('typing');
-    simulateTyping(finalText);
-    
-    // Phase 3: Affichage du preview (si du code est présent)
-    if (code) {
-      await new Promise(resolve => setTimeout(resolve, finalText.length * typingSpeed + 500));
-      setLoadingPhase('preview');
-      setPreview({
-        isVisible: true,
-        code
-      });
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -213,24 +195,8 @@ export function AIChat() {
       
       if (responseMessage) {
         let displayMessage = responseMessage;
-        let codeToPreview = null;
-        
-        if (containsJSXCode(responseMessage)) {
-          codeToPreview = extractJSXCode(responseMessage);
-          displayMessage = responseMessage.replace(/```(?:jsx|tsx)[\s\S]*?```/g, '');
-        }
-
-        // Commencer la saisie du texte et du code simultanément
         setLoadingPhase('typing');
         
-        if (codeToPreview) {
-          // Mettre à jour immédiatement le preview avec le code
-          setPreview({
-            isVisible: true,
-            code: codeToPreview
-          });
-        }
-
         // Simuler la saisie plus rapidement
         let currentIndex = 0;
         const typingInterval = setInterval(() => {
@@ -239,12 +205,8 @@ export function AIChat() {
             currentIndex++;
           } else {
             clearInterval(typingInterval);
-            // Une fois la saisie terminée, afficher le preview final
-            if (codeToPreview) {
-              setLoadingPhase('preview');
-            }
           }
-        }, 5); // Réduire le délai entre chaque caractère à 5ms
+        }, 5);
 
         setMessages(prev => prev.map(msg => 
           msg.id === tempAiMessage.id 
@@ -335,7 +297,76 @@ export function AIChat() {
 
     return code;
   };
-  
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsInitialLoading(true);
+      setLoadingPhase('dots');
+      setError(null);
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      console.log('Envoi du fichier:', file.name);
+
+      const response = await fetch('/api/ocr', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Réponse invalide du serveur');
+      }
+
+      const data = await response.json();
+      console.log('Réponse OCR:', data);
+
+      if (!response.ok) {
+        throw new Error(data.error || `Erreur ${response.status}`);
+      }
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      setOcrText(data.text);
+      
+      setPreview({
+        isVisible: true,
+        content: data.text,
+        type: 'text'
+      });
+
+    } catch (error) {
+      console.error('Erreur lors de l\'OCR:', error);
+      setError(error instanceof Error ? error.message : 'Une erreur est survenue lors de l\'analyse du fichier');
+    } finally {
+      setIsInitialLoading(false);
+      setLoadingPhase(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const PreviewSkeleton = () => (
+    <div className="p-4 space-y-3">
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-[60%]" />
+        <Skeleton className="h-4 w-[80%]" />
+        <Skeleton className="h-4 w-[70%]" />
+      </div>
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-[75%]" />
+        <Skeleton className="h-4 w-[65%]" />
+        <Skeleton className="h-4 w-[85%]" />
+      </div>
+    </div>
+  );
 
   return (
     <Theme appearance="light" accentColor="blue" radius="large">
@@ -389,8 +420,8 @@ export function AIChat() {
                               ${message.role === 'user' ? 'items-end' : 'items-start'}
                             `}
                           >
-                            {/* Indicateur de copie pour les messages de l'IA */}
-                            {message.role === 'assistant' && (
+                            {/* Indicateur de copie uniquement pour les messages complets de l'IA */}
+                            {message.role === 'assistant' && message.content && !isTyping && message.id !== messages[messages.length - 1].id && (
                               <div 
                                 className="absolute top-1 right-1 z-10"
                                 onClick={(e) => {
@@ -475,32 +506,43 @@ export function AIChat() {
                 </div>
 
                 <div className="flex-none border-t bg-white p-2 sm:p-3 lg:hidden">
-                  <form onSubmit={handleSubmit}>
-                    <div className="flex gap-3 items-center">
-                      <input
-                        type="text"
-                        value={inputMessage}
-                        onChange={(e) => setInputMessage(e.target.value)}
-                        placeholder="Écrivez votre message..."
-                        className="flex-1 px-4 py-3 text-sm border rounded-xl
-                                  focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500
-                                  transition-all placeholder:text-gray-400"
-                        disabled={isLoading}
-                      />
-                      <button
-                        type="submit"
-                        disabled={isLoading || !inputMessage.trim()}
-                        className={`
-                          p-3 rounded-xl flex items-center justify-center transition-all
-                          ${isLoading || !inputMessage.trim()
-                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                            : 'bg-blue-500 text-white hover:bg-blue-600 active:scale-95'
-                          }
-                        `}
-                      >
-                        <Send size={20} />
-                      </button>
-                    </div>
+                  <form onSubmit={handleSubmit} className="flex gap-3 items-center">
+                    <input
+                      type="text"
+                      value={inputMessage}
+                      onChange={(e) => setInputMessage(e.target.value)}
+                      placeholder="Écrivez votre message..."
+                      className="flex-1 px-4 py-3 text-sm border rounded-xl"
+                      disabled={isLoading}
+                    />
+                    
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileUpload}
+                      accept="image/*,.pdf"
+                      className="hidden"
+                    />
+                    
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="p-3 rounded-xl bg-gray-100 hover:bg-gray-200 transition-all"
+                    >
+                      <Upload size={20} className="text-gray-600" />
+                    </button>
+
+                    <button
+                      type="submit"
+                      disabled={isLoading || !inputMessage.trim()}
+                      className={`p-3 rounded-xl flex items-center justify-center transition-all
+                        ${isLoading || !inputMessage.trim()
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          : 'bg-blue-500 text-white hover:bg-blue-600 active:scale-95'
+                        }`}
+                    >
+                      <Send size={20} />
+                    </button>
                   </form>
                 </div>
               </div>
@@ -512,12 +554,17 @@ export function AIChat() {
                   </div>
                 </div>
                 <div className="flex-1 overflow-y-auto">
-                  {loadingPhase === 'preview' ? (
-                    <LivePreview 
-                      code={preview.code || ''} 
-                      isGenerating={isGenerating}
-                    />
-                  ) : null}
+                  {isInitialLoading ? (
+                    <PreviewSkeleton />
+                  ) : (
+                    ocrText && (
+                      <div className="p-4">
+                        <pre className="whitespace-pre-wrap font-mono text-sm bg-gray-50 p-4 rounded-lg">
+                          {ocrText}
+                        </pre>
+                      </div>
+                    )
+                  )}
                 </div>
               </div>
             </div>
@@ -526,32 +573,43 @@ export function AIChat() {
 
         <div className="hidden lg:block border-t bg-white mt-auto">
           <div className="max-w-4xl mx-auto w-full p-3">
-            <form onSubmit={handleSubmit}>
-              <div className="flex gap-3 items-center">
-                <input
-                  type="text"
-                  value={inputMessage}
-                  onChange={(e) => setInputMessage(e.target.value)}
-                  placeholder="Écrivez votre message..."
-                  className="flex-1 px-4 py-3 text-sm border rounded-xl
-                            focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500
-                            transition-all placeholder:text-gray-400"
-                  disabled={isLoading}
-                />
-                <button
-                  type="submit"
-                  disabled={isLoading || !inputMessage.trim()}
-                  className={`
-                    p-3 rounded-xl flex items-center justify-center transition-all
-                    ${isLoading || !inputMessage.trim()
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-blue-500 text-white hover:bg-blue-600 active:scale-95'
-                    }
-                  `}
-                >
-                  <Send size={20} />
-                </button>
-              </div>
+            <form onSubmit={handleSubmit} className="flex gap-3 items-center">
+              <input
+                type="text"
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                placeholder="Écrivez votre message..."
+                className="flex-1 px-4 py-3 text-sm border rounded-xl"
+                disabled={isLoading}
+              />
+              
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                accept="image/*,.pdf"
+                className="hidden"
+              />
+              
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="p-3 rounded-xl bg-gray-100 hover:bg-gray-200 transition-all"
+              >
+                <Upload size={20} className="text-gray-600" />
+              </button>
+
+              <button
+                type="submit"
+                disabled={isLoading || !inputMessage.trim()}
+                className={`p-3 rounded-xl flex items-center justify-center transition-all
+                  ${isLoading || !inputMessage.trim()
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-blue-500 text-white hover:bg-blue-600 active:scale-95'
+                  }`}
+              >
+                <Send size={20} />
+              </button>
             </form>
           </div>
         </div>
