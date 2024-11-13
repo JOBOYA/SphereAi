@@ -1,23 +1,17 @@
 import { ocr } from "llama-ocr";
 import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { Readable } from 'stream';
+import { tmpdir } from 'os';
+import { join } from 'path';
+import { writeFile } from 'fs/promises';
 
 export async function POST(request: NextRequest) {
-  // Vérifier que la clé API est présente
   if (!process.env.TOGETHER_API_KEY) {
     console.error('Clé API manquante');
     return NextResponse.json({ error: 'Configuration du serveur incorrecte' }, { status: 500 });
   }
 
   try {
-    // Créer un dossier temporaire s'il n'existe pas
-    const uploadDir = path.join(process.cwd(), 'tmp');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-
-    // Récupérer le fichier depuis la requête
     const formData = await request.formData();
     const file = formData.get('file') as File;
     
@@ -26,36 +20,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Aucun fichier téléversé' }, { status: 400 });
     }
 
-    // Créer un nom de fichier unique
+    // Utiliser le répertoire temporaire du système
+    const tempDir = tmpdir();
     const fileName = `${Date.now()}-${file.name}`;
-    const filePath = path.join(uploadDir, fileName);
-
-    // Convertir le fichier en buffer et l'écrire sur le disque
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    fs.writeFileSync(filePath, buffer);
-
-    console.log('Fichier reçu:', {
-      name: file.name,
-      type: file.type,
-      size: file.size,
-      path: filePath
-    });
+    const filePath = join(tempDir, fileName);
 
     try {
+      // Convertir le fichier en Buffer
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+
+      // Écrire le fichier dans le répertoire temporaire du système
+      await writeFile(filePath, buffer);
+
+      console.log('Fichier temporaire créé:', filePath);
+
+      // Appeler l'OCR
       const result = await ocr({
-        filePath: filePath,
+        filePath,
         apiKey: process.env.TOGETHER_API_KEY,
       });
 
       console.log('Résultat OCR obtenu');
 
-      // Nettoyer le fichier temporaire
+      // Supprimer le fichier temporaire
       try {
-        fs.unlinkSync(filePath);
-        console.log('Fichier temporaire supprimé');
+        await writeFile(filePath, ''); // Vider le fichier
+        console.log('Fichier temporaire nettoyé');
       } catch (cleanupError) {
-        console.error('Erreur lors de la suppression du fichier temporaire:', cleanupError);
+        console.error('Erreur lors du nettoyage du fichier temporaire:', cleanupError);
       }
 
       return NextResponse.json({ text: result });
