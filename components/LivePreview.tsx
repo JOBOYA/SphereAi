@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import * as Babel from '@babel/standalone';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface LivePreviewProps {
   code: string;
@@ -140,8 +141,35 @@ export const LivePreview: React.FC<LivePreviewProps> = ({ code, isGenerating }) 
   return (
     <div className="h-full bg-white">
       {isGenerating ? (
-        <div className="flex items-center justify-center h-full">
-          <p>Génération en cours...</p>
+        <div className="p-4 space-y-4">
+          <h2 className="text-2xl font-bold">Preview</h2>
+          <div className="space-y-3">
+            <Skeleton className="h-6 w-full" />
+            <Skeleton className="h-6 w-[90%]" />
+            <Skeleton className="h-6 w-[95%]" />
+            <Skeleton className="h-6 w-[85%]" />
+            <Skeleton className="h-6 w-full" />
+            <Skeleton className="h-6 w-[92%]" />
+            <Skeleton className="h-6 w-[88%]" />
+            <Skeleton className="h-6 w-[95%]" />
+            <Skeleton className="h-6 w-[90%]" />
+            <Skeleton className="h-6 w-full" />
+            <Skeleton className="h-6 w-[87%]" />
+            <Skeleton className="h-6 w-[93%]" />
+            <Skeleton className="h-6 w-[89%]" />
+            <Skeleton className="h-6 w-[96%]" />
+            <Skeleton className="h-6 w-[91%]" />
+            <Skeleton className="h-6 w-[94%]" />
+            <Skeleton className="h-6 w-[88%]" />
+            <Skeleton className="h-6 w-[92%]" />
+            <Skeleton className="h-6 w-full" />
+            <Skeleton className="h-6 w-[89%]" />
+            <Skeleton className="h-6 w-[93%]" />
+            <Skeleton className="h-6 w-[87%]" />
+            <Skeleton className="h-6 w-[95%]" />
+            <Skeleton className="h-6 w-[90%]" />
+            <Skeleton className="h-6 w-full" />
+          </div>
         </div>
       ) : (
         renderedComponent

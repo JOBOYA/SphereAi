@@ -354,16 +354,44 @@ export function AIChat() {
   };
 
   const PreviewSkeleton = () => (
-    <div className="p-4 space-y-3">
+    <div className="h-full flex flex-col p-4 space-y-4">
+      {/* En-tête */}
       <div className="space-y-2">
-        <Skeleton className="h-4 w-[60%]" />
-        <Skeleton className="h-4 w-[80%]" />
-        <Skeleton className="h-4 w-[70%]" />
-      </div>
-      <div className="space-y-2">
-        <Skeleton className="h-4 w-[75%]" />
-        <Skeleton className="h-4 w-[65%]" />
+        <Skeleton className="h-6 w-[40%] mb-4" />
+        <Skeleton className="h-4 w-[90%]" />
         <Skeleton className="h-4 w-[85%]" />
+        <Skeleton className="h-4 w-[80%]" />
+      </div>
+
+      {/* Corps avec flex-grow pour prendre l'espace restant */}
+      <div className="flex-grow space-y-3">
+        {/* Première section */}
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-[75%]" />
+          <Skeleton className="h-4 w-[100%]" />
+          <Skeleton className="h-4 w-[90%]" />
+        </div>
+
+        {/* Deuxième section */}
+        <div className="space-y-2 mt-4">
+          <Skeleton className="h-4 w-[85%]" />
+          <Skeleton className="h-4 w-[95%]" />
+          <Skeleton className="h-4 w-[70%]" />
+        </div>
+
+        {/* Troisième section */}
+        <div className="space-y-2 mt-4">
+          <Skeleton className="h-4 w-[80%]" />
+          <Skeleton className="h-4 w-[100%]" />
+          <Skeleton className="h-4 w-[60%]" />
+        </div>
+
+        {/* Liste ou tableau */}
+        <div className="grid grid-cols-3 gap-2 mt-4">
+          {[...Array(6)].map((_, i) => (
+            <Skeleton key={i} className="h-4" />
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -555,15 +583,23 @@ export function AIChat() {
                 </div>
                 <div className="flex-1 overflow-y-auto">
                   {isInitialLoading ? (
-                    <PreviewSkeleton />
+                    <div className="h-full animate-fade-in">
+                      <PreviewSkeleton />
+                    </div>
+                  ) : ocrText ? (
+                    <div className="h-full p-4 animate-fade-in">
+                      <pre className="whitespace-pre-wrap font-mono text-sm bg-gray-50 p-4 rounded-lg h-full">
+                        {ocrText}
+                      </pre>
+                    </div>
                   ) : (
-                    ocrText && (
-                      <div className="p-4">
-                        <pre className="whitespace-pre-wrap font-mono text-sm bg-gray-50 p-4 rounded-lg">
-                          {ocrText}
-                        </pre>
+                    <div className="h-full flex items-center justify-center p-4 text-gray-500">
+                      <div className="text-center">
+                        <Upload size={40} className="mx-auto mb-4 text-gray-400" />
+                        <p className="text-lg font-medium">Aucun contenu à afficher</p>
+                        <p className="text-sm">Téléversez une image pour voir son contenu extrait ici</p>
                       </div>
-                    )
+                    </div>
                   )}
                 </div>
               </div>

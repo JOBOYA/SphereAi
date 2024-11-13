@@ -80,6 +80,7 @@ module.exports = {
   			'float': 'float 6s ease-in-out infinite',
   			'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
   			'shimmer': 'shimmer 2s linear infinite',
+  			'fade-in': 'fadeIn 0.5s ease-in-out',
   		},
   		keyframes: {
   			gradient: {
@@ -93,6 +94,10 @@ module.exports = {
   			shimmer: {
   				'0%': { backgroundPosition: '-200% 0' },
   				'100%': { backgroundPosition: '200% 0' },
+  			},
+  			fadeIn: {
+  				'0%': { opacity: '0' },
+  				'100%': { opacity: '1' },
   			},
   		},
   		backgroundSize: {
