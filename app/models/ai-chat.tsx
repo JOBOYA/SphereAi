@@ -20,10 +20,11 @@ import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import dynamic from 'next/dynamic';
-import { LivePreview } from '../LivePreview';
+import { LivePreview } from '../../components/LivePreview';
 import { ocr } from "llama-ocr";
 import { Skeleton } from "@/components/ui/skeleton";
 import { prompts } from '@/lib/prompts';
+import { useRouter, usePathname } from 'next/navigation';
 
 const LoadingDots: React.FC = () => (
   <div className="flex items-center space-x-2">
@@ -55,6 +56,18 @@ interface PreviewState {
   type: 'text' | 'image';
 }
 
+interface ConversationMessage {
+  content: string;
+  is_user_message: boolean;
+  timestamp: string;
+}
+
+interface Conversation {
+  conversation_id: string;
+  created_at: string;
+  messages: ConversationMessage[];
+}
+
 export function AIChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -79,6 +92,10 @@ export function AIChat() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [ocrText, setOcrText] = useState<string | null>(null);
   const [isInitialLoading, setIsInitialLoading] = useState(false);
+  const [conversationId, setConversationId] = useState<string>('');
+  const router = useRouter();
+  const pathname = usePathname();
+  const [conversations, setConversations] = useState<Conversation[]>([]);
 
   useEffect(() => {
     console.log('🔑 Token dans AIChat:', accessToken ? 'Présent' : 'Absent');
@@ -86,6 +103,23 @@ export function AIChat() {
       console.log('🔑 Début du token:', accessToken.substring(0, 20) + '...');
     }
   }, [accessToken]);
+
+  useEffect(() => {
+    const pathParts = pathname.split('/');
+    const existingConversationId = pathParts[pathParts.length - 1];
+    
+    if (existingConversationId.startsWith('conv_')) {
+      setConversationId(existingConversationId);
+    } else {
+      const newConversationId = generateConversationId();
+      setConversationId(newConversationId);
+      router.push(`/chat/${newConversationId}`);
+    }
+  }, [pathname]);
+
+  const generateConversationId = () => {
+    return `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  };
 
   const sendMessage = async (message: string) => {
     try {
@@ -96,11 +130,10 @@ export function AIChat() {
         return;
       }
 
-      const contextPrompt = ocrText 
-        ? prompts.imageAnalysis
-            .replace('{text}', ocrText)
-            .replace('{question}', message)
-        : prompts.noContext;
+      console.log('Envoi de la requête avec:', {
+        conversation_id: conversationId,
+        message: message
+      });
 
       const response = await fetch('https://appai.charlesagostinelli.com/api/chatMistral/', {
         method: 'POST',
@@ -109,11 +142,13 @@ export function AIChat() {
           'Authorization': `Bearer ${accessToken}`
         },
         body: JSON.stringify({ 
-          message: contextPrompt
+          conversation_id: conversationId,
+          message: message
         })
       });
 
-      const data = await response.json(); 
+      const data = await response.json();
+      console.log('Réponse brute de l\'API:', data);
 
       if (!response.ok) {
         if (response.status === 503) {
@@ -130,18 +165,24 @@ export function AIChat() {
           return null;
         } else if (response.status === 401) {
           setError('Session expirée, veuillez vous reconnecter');
+          return null;
         } else {
           throw new Error(data.error || 'Une erreur est survenue');
         }
-        return null;
       }
 
-      setApiCallsRemaining(data.api_calls_remaining);
-      setError(null);
-      return data.message;
+      // Vérification de la structure de la réponse
+      if (data && data.api_response) {
+        setApiCallsRemaining(data.api_calls_remaining);
+        setError(null);
+        return data.api_response;
+      } else {
+        console.error('Format de réponse invalide:', data);
+        throw new Error('Format de réponse invalide');
+      }
 
     } catch (error) {
-      console.error('Erreur:', error);
+      console.error('Erreur détaillée:', error);
       setError('Une erreur est survenue lors de la communication avec l\'IA');
       return null;
     }
@@ -167,6 +208,8 @@ export function AIChat() {
     e.preventDefault();
     if (!inputMessage.trim() || isLoading) return;
 
+    console.log('🚀 Début handleSubmit avec message:', inputMessage);
+
     const newMessage: Message = {
       id: Date.now().toString(),
       content: inputMessage,
@@ -188,42 +231,42 @@ export function AIChat() {
     setLoadingPhase('dots');
 
     try {
-      // Réduire le temps d'affichage des points à 500ms
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
+      console.log('📡 Envoi du message avec conversationId:', conversationId);
       const responseMessage = await sendMessage(inputMessage);
+      console.log('✅ Réponse reçue:', responseMessage);
       
       if (responseMessage) {
-        let displayMessage = responseMessage;
         setLoadingPhase('typing');
         
-        // Simuler la saisie plus rapidement
-        let currentIndex = 0;
-        const typingInterval = setInterval(() => {
-          if (currentIndex < displayMessage.length) {
-            setTypingText(displayMessage.slice(0, currentIndex + 1));
-            currentIndex++;
-          } else {
-            clearInterval(typingInterval);
-          }
-        }, 5);
-
+        // Mise à jour immédiate pour voir la réponse
         setMessages(prev => prev.map(msg => 
           msg.id === tempAiMessage.id 
-            ? { ...msg, content: displayMessage }
+            ? { ...msg, content: responseMessage }
+            : msg
+        ));
+
+        // Mise à jour du texte pour l'effet de typing
+        setTypingText(responseMessage);
+      } else {
+        console.log('⚠️ Pas de réponse reçue');
+        // Gérer le cas où il n'y a pas de réponse
+        setMessages(prev => prev.map(msg => 
+          msg.id === tempAiMessage.id 
+            ? { ...msg, content: "Désolé, je n'ai pas pu générer une réponse. Veuillez réessayer." }
             : msg
         ));
       }
     } catch (error) {
-      console.error('❌ Erreur:', error);
+      console.error('❌ Erreur dans handleSubmit:', error);
       setMessages(prev => prev.map(msg => 
         msg.id === tempAiMessage.id 
-          ? { ...msg, content: "Désolé, une erreur est survenue lors de la communication avec l'IA." }
+          ? { ...msg, content: "Une erreur est survenue lors de la communication avec l'IA." }
           : msg
       ));
     } finally {
       setIsLoading(false);
       setIsGenerating(false);
+      setLoadingPhase(null);
     }
   };
 
@@ -395,6 +438,84 @@ export function AIChat() {
       </div>
     </div>
   );
+
+  const fetchUserConversations = async () => {
+    try {
+      const accessToken = localStorage.getItem('accessToken');
+      
+      if (!accessToken) {
+        console.error('Token non disponible');
+        return;
+      }
+
+      const response = await fetch('https://appai.charlesagostinelli.com/api/user-conversations/', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de la récupération des conversations');
+      }
+
+      const data = await response.json();
+      setConversations(data);
+
+      // Si on a un conversationId actif, charger les messages de cette conversation
+      if (conversationId) {
+        const currentConversation = data.find(
+          (conv: Conversation) => conv.conversation_id === conversationId
+        );
+        
+        if (currentConversation) {
+          const formattedMessages = currentConversation.messages.map((msg: ConversationMessage) => ({
+            id: Date.now().toString() + Math.random(),
+            content: msg.content,
+            role: msg.is_user_message ? 'user' : 'assistant',
+            timestamp: new Date(msg.timestamp)
+          }));
+          
+          setMessages(formattedMessages);
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des conversations:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchUserConversations();
+    }
+  }, [user, conversationId]);
+
+  useEffect(() => {
+    const pathParts = pathname.split('/');
+    const existingConversationId = pathParts[pathParts.length - 1];
+    
+    if (existingConversationId.startsWith('conv_')) {
+      setConversationId(existingConversationId);
+      // Charger les messages de cette conversation
+      const conversation = conversations.find(
+        conv => conv.conversation_id === existingConversationId
+      );
+      
+      if (conversation) {
+        const formattedMessages = conversation.messages.map(msg => ({
+          id: Date.now().toString() + Math.random(),
+          content: msg.content,
+          role: msg.is_user_message ? 'user' : 'assistant',
+          timestamp: new Date(msg.timestamp)
+        }));
+        
+        setMessages(formattedMessages as Message[]);
+      }
+    } else {
+      const newConversationId = generateConversationId();
+      setConversationId(newConversationId);
+      router.push(`/chat/${newConversationId}`);
+    }
+  }, [pathname, conversations]);
 
   return (
     <Theme appearance="light" accentColor="blue" radius="large">

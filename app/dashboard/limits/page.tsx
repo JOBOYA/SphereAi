@@ -1,6 +1,6 @@
 "use client";
 
-import { ApiLimits } from "@/components/models/api-limits"
+import { ApiLimits } from "@/app/models/api-limits"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { SidebarTrigger } from "@/components/ui/sidebar"

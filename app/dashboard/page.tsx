@@ -6,7 +6,7 @@ import { authService } from '@/app/services/auth';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
 import { SidebarProvider } from '@/components/ui/sidebar';
-import { AIChat } from "@/components/models/ai-chat";
+import { AIChat } from "@/app/models/ai-chat";
 import { useAuth } from '@/src/app/contexts/AuthContext';
 
 export default function DashboardPage() {

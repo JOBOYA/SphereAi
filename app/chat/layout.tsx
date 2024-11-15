@@ -1,11 +1,14 @@
 'use client';
 
-import { AIChat } from "@/components/models/ai-chat";
-import { AppSidebar } from "@/components/app-sidebar";
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider } from '@/components/ui/sidebar';
+import { AppSidebar } from '@/components/app-sidebar';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 
-export default function ChatPage() {
+export default function ChatLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <SidebarProvider>
       <div className="flex h-screen w-full">
@@ -17,7 +20,7 @@ export default function ChatPage() {
             </div>
           </div>
           <div className="flex-1 w-full">
-            <AIChat />
+            {children}
           </div>
         </div>
       </div>
