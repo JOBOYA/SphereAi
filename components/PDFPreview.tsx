@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Document, Page, pdfjs } from 'react-pdf';
+import { Document, Page } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
 import { Minus, Plus } from 'lucide-react';
 
-// Configuration du worker PDF.js
+// Configuration du worker PDF.js de manière conditionnelle
+const pdfWorkerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${process.env.NEXT_PUBLIC_PDFJS_VERSION || '3.4.120'}/pdf.worker.min.js`;
+
 if (typeof window !== 'undefined') {
-  pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+  const { pdfjs } = require('react-pdf');
+  pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
 }
 
 interface PDFPreviewProps {

@@ -3,10 +3,7 @@ import { authMiddleware } from "@clerk/nextjs/server";
 export default authMiddleware({
     publicRoutes: [
         "/",  
-        "/api/register", 
-        "/api/login",
-        "/sign-in",  
-        "/sign-up"   
+        "/api/auth/getToken"   
     ],
     afterAuth(auth, req, evt) {
         // Obtenir le chemin de l'URL
