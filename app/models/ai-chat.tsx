@@ -68,6 +68,9 @@ interface Conversation {
   messages: ConversationMessage[];
 }
 
+const typingSpeed = 0.1; // Réduire de 1ms à 0.1ms
+const chunkSize = 25; // Augmenter de 5 à 25 caractères par chunk
+
 export function AIChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -87,7 +90,6 @@ export function AIChat() {
   const { user } = useUser();
   const [typingText, setTypingText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const typingSpeed = 5; // millisecondes entre chaque caractère
   const [loadingPhase, setLoadingPhase] = useState<'dots' | 'typing' | 'preview' | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [ocrText, setOcrText] = useState<string | null>(null);
@@ -136,11 +138,6 @@ export function AIChat() {
         return null;
       }
 
-      console.log('Envoi de la requête avec:', {
-        conversation_id: parseInt(conversationId),
-        message: message
-      });
-
       const response = await fetch('https://appai.charlesagostinelli.com/api/chatMistral/', {
         method: 'POST',
         headers: {
@@ -154,7 +151,6 @@ export function AIChat() {
       });
 
       const data = await response.json();
-      console.log('Réponse brute de l\'API:', data);
 
       if (!response.ok) {
         if (response.status === 503) {
@@ -184,7 +180,6 @@ export function AIChat() {
       return data;
 
     } catch (error) {
-      console.error('Erreur détaillée:', error);
       throw error;
     }
   };
@@ -209,8 +204,6 @@ export function AIChat() {
     e.preventDefault();
     if (!inputMessage.trim() || isLoading) return;
 
-    console.log('Début handleSubmit avec message:', inputMessage);
-
     const newMessage: Message = {
       id: Date.now().toString(),
       content: inputMessage,
@@ -233,35 +226,42 @@ export function AIChat() {
 
     try {
       const response = await sendMessage(inputMessage);
-      console.log('Réponse reçue de l\'API:', response);
       
       if (response && response.api_response) {
         setLoadingPhase('typing');
         
-        let currentText = "";
         const finalText = response.api_response;
-        const typingInterval = setInterval(() => {
-          if (currentText.length < finalText.length) {
-            currentText = finalText.slice(0, currentText.length + 1);
+        const totalChunks = Math.ceil(finalText.length / chunkSize);
+        let currentChunk = 0;
+
+        const updateText = () => {
+          if (currentChunk < totalChunks) {
+            const start = currentChunk * chunkSize;
+            const end = Math.min(start + chunkSize, finalText.length);
+            const text = finalText.slice(0, end);
+            
             setMessages(prevMessages => 
               prevMessages.map(msg => 
                 msg.id === tempAiMessage.id 
-                  ? { ...msg, content: currentText }
+                  ? { ...msg, content: text }
                   : msg
               )
             );
-          } else {
-            clearInterval(typingInterval);
-            setLoadingPhase(null);
+            
+            currentChunk++;
+            if (currentChunk < totalChunks) {
+              requestAnimationFrame(updateText);
+            } else {
+              setLoadingPhase(null);
+            }
           }
-        }, typingSpeed);
+        };
+
+        requestAnimationFrame(updateText);
         
         if (response.api_calls_remaining) {
           setApiCallsRemaining(response.api_calls_remaining);
         }
-      } else {
-        console.error('Réponse invalide de l\'API:', response);
-        throw new Error('Format de réponse invalide');
       }
     } catch (error) {
       console.error('Erreur dans handleSubmit:', error);
@@ -290,6 +290,18 @@ export function AIChat() {
   };
 
   const MarkdownMessage = ({ content }: { content: string }) => {
+    const [copiedSnippetId, setCopiedSnippetId] = useState<string | null>(null);
+    
+    const handleCopySnippet = async (code: string, snippetId: string) => {
+      try {
+        await navigator.clipboard.writeText(code);
+        setCopiedSnippetId(snippetId);
+        setTimeout(() => setCopiedSnippetId(null), 2000);
+      } catch (err) {
+        console.error('Erreur lors de la copie:', err);
+      }
+    };
+
     return (
       <ReactMarkdown
         components={{
@@ -297,21 +309,43 @@ export function AIChat() {
             const { children, className, ...rest } = props;
             const match = /language-(\w+)/.exec(className || '');
             const isInline = !match;
+            const snippetId = Math.random().toString(36).substring(7);
             
-            return isInline ? (
-              <code className="bg-gray-100 rounded px-1 py-0.5" {...rest}>
-                {children}
-              </code>
-            ) : (
-              <SyntaxHighlighter
-                {...rest as any}
-                style={oneDark}
-                language={match[1]}
-                PreTag="div"
-                className="rounded-md my-2"
-              >
-                {String(children).replace(/\n$/, '')}
-              </SyntaxHighlighter>
+            if (isInline) {
+              return (
+                <code className="bg-gray-100 rounded px-1 py-0.5" {...rest}>
+                  {children}
+                </code>
+              );
+            }
+
+            return (
+              <div className="relative group">
+                <div 
+                  className="absolute top-2 right-2 z-10"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCopySnippet(String(children), snippetId);
+                  }}
+                >
+                  <div className="p-1.5 bg-gray-800 hover:bg-gray-700 rounded-md cursor-pointer">
+                    {copiedSnippetId === snippetId ? (
+                      <Check size={16} className="text-green-500" />
+                    ) : (
+                      <Copy size={16} className="text-gray-300 hover:text-white" />
+                    )}
+                  </div>
+                </div>
+                <SyntaxHighlighter
+                  {...rest as any}
+                  style={oneDark}
+                  language={match[1]}
+                  PreTag="div"
+                  className="rounded-md my-2"
+                >
+                  {String(children).replace(/\n$/, '')}
+                </SyntaxHighlighter>
+              </div>
             );
           }
         }}
@@ -535,10 +569,6 @@ export function AIChat() {
     }
   };
 
-  useEffect(() => {
-    console.log('Messages mis à jour:', messages);
-  }, [messages]);
-
   const renderAssistantMessage = (message: Message) => {
     if (message.id === messages[messages.length - 1].id && message.role === 'assistant') {
       if (loadingPhase === 'dots') {
@@ -606,32 +636,13 @@ export function AIChat() {
                               ${message.role === 'user' ? 'items-end' : 'items-start'}
                             `}
                           >
-                            {message.role === 'assistant' && message.content && !isTyping && message.id !== messages[messages.length - 1].id && (
-                              <div 
-                                className="absolute top-1 right-1 z-10"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleCopyMessage(message.content, message.id);
-                                }}
-                              >
-                                <div className="p-1.5 hover:bg-gray-200 rounded-md cursor-pointer">
-                                  {copiedMessageId === message.id ? (
-                                    <Check size={16} className="text-green-500" />
-                                  ) : (
-                                    <Copy size={16} className="text-gray-400 hover:text-gray-600" />
-                                  )}
-                                </div>
-                              </div>
-                            )}
-
                             <div className={`
-                              px-4 py-2 shadow-sm relative group cursor-pointer
+                              px-4 py-2 shadow-sm relative group
                               ${message.role === 'user'
                                 ? 'bg-[#4F46E5] text-white rounded-t-2xl rounded-l-2xl rounded-br-lg max-w-[320px]'
                                 : 'bg-[#F3F4F6] text-gray-800 rounded-t-2xl rounded-r-2xl rounded-bl-lg max-w-[480px] hover:bg-gray-100'
                               }
                             `}
-                            onClick={message.role === 'assistant' ? () => handleCopyMessage(message.content, message.id) : undefined}
                             >
                               <div className="text-sm whitespace-pre-wrap break-words">
                                 {message.role === 'assistant' 
