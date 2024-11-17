@@ -59,6 +59,10 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ file }) => {
     }
   };
 
+  const onDocumentLoadSuccess = ({ numPages: nextNumPages }: { numPages: number }) => {
+    setNumPages(nextNumPages);
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex flex-col gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
@@ -120,14 +124,19 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ file }) => {
           <div ref={contentRef} className="transform-gpu transition-transform duration-100">
             <Document
               file={url}
-              onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+              onLoadSuccess={onDocumentLoadSuccess}
               loading={<LoadingComponent />}
+              noData={<div>Aucun document chargé</div>}
+              error={<div>Une erreur est survenue lors du chargement du PDF</div>}
             >
-              <Page 
-                pageNumber={pageNumber}
-                loading={<LoadingComponent />}
-                className="shadow-lg bg-white"
-              />
+              {numPages > 0 && (
+                <Page 
+                  key={`page_${pageNumber}`}
+                  pageNumber={pageNumber}
+                  loading={<LoadingComponent />}
+                  className="shadow-lg bg-white"
+                />
+              )}
             </Document>
           </div>
         </div>
