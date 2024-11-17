@@ -111,7 +111,9 @@ export function AIChat() {
     if (/^\d+$/.test(existingConversationId)) {
       console.log('ID de conversation trouvé:', existingConversationId);
       setConversationId(existingConversationId);
-      fetchConversationMessages(existingConversationId);
+      if (messages.length === 0) {
+        fetchConversationMessages(existingConversationId);
+      }
     } else {
       console.log('Création d\'un nouvel ID de conversation');
       const newConversationId = generateConversationId();
@@ -175,12 +177,11 @@ export function AIChat() {
         }
       }
 
-      if (data && data.api_response) {
-        setApiCallsRemaining(data.api_calls_remaining);
-        return data.api_response;
-      } else {
+      if (!data || !data.api_response) {
         throw new Error('Format de réponse invalide');
       }
+
+      return data;
 
     } catch (error) {
       console.error('Erreur détaillée:', error);
@@ -217,47 +218,64 @@ export function AIChat() {
       timestamp: new Date(),
     };
 
-    setMessages(prev => [...prev, newMessage]);
+    setMessages(prevMessages => [...prevMessages, newMessage]);
     setInputMessage('');
     setIsLoading(true);
     setLoadingPhase('dots');
+
+    const tempAiMessage: Message = {
+      id: (Date.now() + 1).toString(),
+      content: "",
+      role: 'assistant',
+      timestamp: new Date(),
+    };
+    setMessages(prevMessages => [...prevMessages, tempAiMessage]);
 
     try {
       const response = await sendMessage(inputMessage);
       console.log('Réponse reçue de l\'API:', response);
       
-      if (response) {
+      if (response && response.api_response) {
         setLoadingPhase('typing');
         
-        const aiMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          content: response,
-          role: 'assistant',
-          timestamp: new Date(),
-        };
-
-        setMessages(prev => [...prev, aiMessage]);
+        let currentText = "";
+        const finalText = response.api_response;
+        const typingInterval = setInterval(() => {
+          if (currentText.length < finalText.length) {
+            currentText = finalText.slice(0, currentText.length + 1);
+            setMessages(prevMessages => 
+              prevMessages.map(msg => 
+                msg.id === tempAiMessage.id 
+                  ? { ...msg, content: currentText }
+                  : msg
+              )
+            );
+          } else {
+            clearInterval(typingInterval);
+            setLoadingPhase(null);
+          }
+        }, typingSpeed);
         
-        setTypingText(response);
-        
-        if (typeof response === 'object' && 'api_calls_remaining' in response) {
+        if (response.api_calls_remaining) {
           setApiCallsRemaining(response.api_calls_remaining);
         }
+      } else {
+        console.error('Réponse invalide de l\'API:', response);
+        throw new Error('Format de réponse invalide');
       }
     } catch (error) {
       console.error('Erreur dans handleSubmit:', error);
       setError('Une erreur est survenue lors de l\'envoi du message');
       
-      const errorMessage: Message = {
-        id: Date.now().toString(),
-        content: "Désolé, une erreur est survenue lors de l'envoi du message.",
-        role: 'assistant',
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages(prevMessages => 
+        prevMessages.map(msg => 
+          msg.id === tempAiMessage.id 
+            ? { ...msg, content: "Désolé, une erreur est survenue lors de l'envoi du message." }
+            : msg
+        )
+      );
     } finally {
       setIsLoading(false);
-      setLoadingPhase(null);
     }
   };
 
@@ -517,6 +535,23 @@ export function AIChat() {
     }
   };
 
+  useEffect(() => {
+    console.log('Messages mis à jour:', messages);
+  }, [messages]);
+
+  const renderAssistantMessage = (message: Message) => {
+    if (message.id === messages[messages.length - 1].id && message.role === 'assistant') {
+      if (loadingPhase === 'dots') {
+        return (
+          <div className="flex items-center justify-start p-2">
+            <LoadingDots />
+          </div>
+        );
+      }
+    }
+    return <MarkdownMessage content={message.content} />;
+  };
+
   return (
     <Theme appearance="light" accentColor="blue" radius="large">
       <div className="min-h-screen flex flex-col">
@@ -599,23 +634,10 @@ export function AIChat() {
                             onClick={message.role === 'assistant' ? () => handleCopyMessage(message.content, message.id) : undefined}
                             >
                               <div className="text-sm whitespace-pre-wrap break-words">
-                                {message.role === 'assistant' ? (
-                                  message.id === messages[messages.length - 1].id ? (
-                                    <>
-                                      {loadingPhase === 'dots' ? (
-                                        <div className="flex items-center justify-start p-2">
-                                          <LoadingDots />
-                                        </div>
-                                      ) : (
-                                        <MarkdownMessage content={typingText} />
-                                      )}
-                                    </>
-                                  ) : (
-                                    <MarkdownMessage content={message.content} />
-                                  )
-                                ) : (
-                                  message.content
-                                )}
+                                {message.role === 'assistant' 
+                                  ? renderAssistantMessage(message)
+                                  : message.content
+                                }
                               </div>
                             </div>
 
