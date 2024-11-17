@@ -7,7 +7,7 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AIChat } from "@/app/models/ai-chat";
-import { useAuth } from '@/src/app/contexts/AuthContext';
+import { useAuth } from '@/app/contexts/AuthContext';
 
 export default function DashboardPage() {
   const { user, isLoaded } = useUser();

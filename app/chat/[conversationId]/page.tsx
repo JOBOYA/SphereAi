@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { authService } from '@/app/services/auth';
 import { AIChat } from "@/app/models/ai-chat";
-import { useAuth } from '@/src/app/contexts/AuthContext';
+import { useAuth } from '@/app/contexts/AuthContext';
 
 export default function ChatPage({ params }: { params: { conversationId: string } }) {
   const { user, isLoaded } = useUser();

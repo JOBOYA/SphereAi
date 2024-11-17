@@ -3,7 +3,7 @@ import "./globals.css";
 import Script from "next/script";
 import { Metadata } from "next";
 import localFont from "next/font/local";
-import { AuthProvider } from '@/src/app/contexts/AuthContext';
+import { AuthProvider } from '@/app/contexts/AuthContext';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 
 export const metadata: Metadata = {

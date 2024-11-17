@@ -5,7 +5,7 @@ import { Send, User, Bot, Loader2, Copy, Check, Sparkles, Split, Upload, Trash2 
 import * as Avatar from '@radix-ui/react-avatar';
 import { Theme } from '@radix-ui/themes';
 import '@radix-ui/themes/styles.css';
-import { useAuth } from '@/src/app/contexts/AuthContext';
+import { useAuth } from '@/app/contexts/AuthContext';
 import { useUser } from '@clerk/nextjs';
 import {
   Dialog,
@@ -25,6 +25,9 @@ import { ocr } from "llama-ocr";
 import { Skeleton } from "@/components/ui/skeleton";
 import { prompts } from '@/lib/prompts';
 import { useRouter, usePathname } from 'next/navigation';
+import { Document, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
+import 'react-pdf/dist/esm/Page/TextLayer.css';
 
 const LoadingDots: React.FC = () => (
   <div className="flex items-center space-x-2">
@@ -53,7 +56,8 @@ interface Message {
 interface PreviewState {
   isVisible: boolean;
   content: string | null;
-  type: 'text' | 'image';
+  type: 'text' | 'image' | 'pdf';
+  file?: File | null;
 }
 
 interface ConversationMessage {
@@ -70,6 +74,11 @@ interface Conversation {
 
 const typingSpeed = 0.1; // Réduire de 1ms à 0.1ms
 const chunkSize = 25; // Augmenter de 5 à 25 caractères par chunk
+
+// Initialiser PDF.js
+if (typeof window !== 'undefined') {
+  const pdfjs = require('react-pdf/dist/esm/pdf.worker.entry');
+}
 
 export function AIChat() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -98,6 +107,7 @@ export function AIChat() {
   const router = useRouter();
   const pathname = usePathname();
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [extractedPdfText, setExtractedPdfText] = useState<string | null>(null);
 
   useEffect(() => {
     console.log('🔑 Token dans AIChat:', accessToken ? 'Présent' : 'Absent');
@@ -383,58 +393,56 @@ export function AIChat() {
     return code;
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (!file) return;
 
     try {
-      setIsInitialLoading(true);
-      setLoadingPhase('dots');
-      setError(null);
-
-      const formData = new FormData();
-      formData.append('file', file);
-
-      console.log('Envoi du fichier:', file.name);
-
-      const response = await fetch('/api/ocr', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('Réponse invalide du serveur');
+      if (file.type !== 'application/pdf') {
+        setError('Seuls les fichiers PDF sont acceptés');
+        return;
       }
 
-      const data = await response.json();
-      console.log('Réponse OCR:', data);
-
-      if (!response.ok) {
-        throw new Error(data.error || `Erreur ${response.status}`);
-      }
-
-      if (data.error) {
-        throw new Error(data.error);
-      }
-
-      setOcrText(data.text);
-      
       setPreview({
         isVisible: true,
-        content: data.text,
-        type: 'text'
+        content: `Fichier PDF chargé\n\nNom du fichier: ${file.name}\nTaille: ${(file.size / 1024).toFixed(2)} KB`,
+        type: 'pdf',
+        file: file
       });
 
+      // Extraire le texte du PDF
+      const extractedText = await extractTextFromPDF(file);
+      setExtractedPdfText(extractedText);
+
     } catch (error) {
-      console.error('Erreur lors de l\'OCR:', error);
-      setError(error instanceof Error ? error.message : 'Une erreur est survenue lors de l\'analyse du fichier');
+      console.error('Erreur lors du chargement du fichier:', error);
+      setError('Une erreur est survenue lors du chargement du fichier');
     } finally {
-      setIsInitialLoading(false);
-      setLoadingPhase(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+    }
+  };
+
+  const extractTextFromPDF = async (file: File): Promise<string> => {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjs.getDocument(arrayBuffer).promise;
+      let fullText = '';
+      
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items
+          .map((item: any) => item.str)
+          .join(' ');
+        fullText += pageText + '\n';
+      }
+      
+      return fullText;
+    } catch (error) {
+      console.error('Erreur lors de l\'extraction du texte:', error);
+      throw new Error('Impossible d\'extraire le texte du PDF');
     }
   };
 
@@ -580,6 +588,122 @@ export function AIChat() {
       }
     }
     return <MarkdownMessage content={message.content} />;
+  };
+
+  const PDFPreview = React.memo(({ file }: { file: File }) => {
+    const [numPages, setNumPages] = useState<number>(0);
+    const [pageNumber, setPageNumber] = useState(1);
+    const [url, setUrl] = useState<string>('');
+
+    useEffect(() => {
+      const fileUrl = URL.createObjectURL(file);
+      setUrl(fileUrl);
+      return () => URL.revokeObjectURL(fileUrl);
+    }, [file]);
+
+    return (
+      <div className="flex flex-col items-center">
+        <div className="w-full max-w-2xl overflow-auto">
+          <Document
+            file={url}
+            onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+            loading={null}
+            className="mx-auto"
+          >
+            <Page 
+              pageNumber={pageNumber} 
+              width={600}
+              className="mx-auto"
+              loading={null}
+            />
+          </Document>
+        </div>
+        <div className="flex items-center gap-4 mt-4">
+          <button
+            onClick={() => setPageNumber(p => Math.max(1, p - 1))}
+            disabled={pageNumber <= 1}
+            className="px-3 py-1 bg-gray-100 rounded-md disabled:opacity-50"
+          >
+            Précédent
+          </button>
+          <span>
+            Page {pageNumber} sur {numPages}
+          </span>
+          <button
+            onClick={() => setPageNumber(p => Math.min(numPages, p + 1))}
+            disabled={pageNumber >= numPages}
+            className="px-3 py-1 bg-gray-100 rounded-md disabled:opacity-50"
+          >
+            Suivant
+          </button>
+        </div>
+      </div>
+    );
+  });
+
+  PDFPreview.displayName = 'PDFPreview';
+
+  const analyzePDFWithAI = async () => {
+    if (!extractedPdfText) {
+      setError('Aucun texte PDF à analyser');
+      return;
+    }
+
+    const prompt = `Je viens de charger un PDF avec le contenu suivant:\n\n${extractedPdfText}\n\nPouvez-vous analyser ce contenu et me dire de quoi il s'agit ?`;
+    
+    const pdfMessage: Message = {
+      id: Date.now().toString(),
+      content: `[PDF Chargé] Veuillez analyser le contenu de ce document.`,
+      role: 'user',
+      timestamp: new Date(),
+    };
+    
+    setMessages(prevMessages => [...prevMessages, pdfMessage]);
+    
+    const tempAiMessage: Message = {
+      id: (Date.now() + 1).toString(),
+      content: "",
+      role: 'assistant',
+      timestamp: new Date(),
+    };
+    setMessages(prevMessages => [...prevMessages, tempAiMessage]);
+    
+    try {
+      setIsLoading(true);
+      setLoadingPhase('dots');
+
+      const response = await sendMessage(prompt);
+      
+      if (response && response.api_response) {
+        setLoadingPhase('typing');
+        
+        setMessages(prevMessages => 
+          prevMessages.map(msg => 
+            msg.id === tempAiMessage.id 
+              ? { ...msg, content: response.api_response }
+              : msg
+          )
+        );
+
+        if (response.api_calls_remaining) {
+          setApiCallsRemaining(response.api_calls_remaining);
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'analyse du PDF:', error);
+      setError('Une erreur est survenue lors de l\'analyse du PDF');
+      
+      setMessages(prevMessages => 
+        prevMessages.map(msg => 
+          msg.id === tempAiMessage.id 
+            ? { ...msg, content: "Désolé, une erreur est survenue lors de l'analyse du PDF." }
+            : msg
+        )
+      );
+    } finally {
+      setIsLoading(false);
+      setLoadingPhase(null);
+    }
   };
 
   return (
@@ -731,28 +855,56 @@ export function AIChat() {
                 <div className="flex-none px-4 sm:px-6 py-3 border-b">
                   <div className="flex items-center justify-between">
                     <h2 className="text-xl font-semibold text-gray-900">Preview</h2>
+                    {extractedPdfText && (
+                      <button
+                        onClick={analyzePDFWithAI}
+                        disabled={isLoading}
+                        className="p-2 rounded-lg bg-blue-50 hover:bg-blue-100 transition-all flex items-center gap-2 text-blue-600 disabled:opacity-50"
+                      >
+                        <Sparkles size={16} className="text-blue-500" />
+                        <span className="text-sm">Analyser avec l'IA</span>
+                      </button>
+                    )}
                   </div>
                 </div>
-                <div className="flex-1 overflow-y-auto">
-                  {isInitialLoading ? (
-                    <div className="h-full animate-fade-in">
-                      <PreviewSkeleton />
-                    </div>
-                  ) : ocrText ? (
-                    <div className="h-full p-4 animate-fade-in">
-                      <pre className="whitespace-pre-wrap font-mono text-sm bg-gray-50 p-4 rounded-lg h-full">
-                        {ocrText}
-                      </pre>
-                    </div>
-                  ) : (
-                    <div className="h-full flex items-center justify-center p-4 text-gray-500">
-                      <div className="text-center">
-                        <Upload size={40} className="mx-auto mb-4 text-gray-400" />
-                        <p className="text-lg font-medium">Aucun contenu à afficher</p>
-                        <p className="text-sm">Téléversez une image pour voir son contenu extrait ici</p>
+                <div className="flex-1 overflow-hidden">
+                  <div className="h-full overflow-y-auto">
+                    {preview.type === 'pdf' && preview.file ? (
+                      <div className="p-4">
+                        <div className="mb-4">
+                          <h3 className="text-lg font-medium">Fichier PDF chargé</h3>
+                          <p className="text-sm text-gray-500">
+                            {preview.file.name} ({(preview.file.size / 1024).toFixed(2)} KB)
+                          </p>
+                        </div>
+                        <React.Suspense fallback={<div>Chargement du PDF...</div>}>
+                          <PDFPreview file={preview.file} />
+                        </React.Suspense>
                       </div>
-                    </div>
-                  )}
+                    ) : (
+                      <div className="h-full flex items-center justify-center p-4 text-gray-500">
+                        <div className="text-center">
+                          <Upload size={40} className="mx-auto mb-4 text-gray-400" />
+                          <p className="text-lg font-medium">Aucun contenu à afficher</p>
+                          <p className="text-sm">Téléversez un fichier PDF pour voir son contenu ici</p>
+                          <input
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleFileUpload}
+                            accept=".pdf"
+                            className="hidden"
+                          />
+                          <button
+                            onClick={() => fileInputRef.current?.click()}
+                            className="mt-4 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center gap-2 mx-auto"
+                          >
+                            <Upload size={16} className="text-gray-600" />
+                            <span className="text-sm text-gray-600">Importer un PDF</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

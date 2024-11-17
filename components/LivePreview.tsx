@@ -1,15 +1,64 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import * as Babel from '@babel/standalone';
 import { Skeleton } from '@/components/ui/skeleton';
+import { FileText, Upload } from 'lucide-react';
 
 interface LivePreviewProps {
   code: string;
   isGenerating: boolean;
+  onFileUpload?: (file: File) => void;
 }
 
-export const LivePreview: React.FC<LivePreviewProps> = ({ code, isGenerating }) => {
+interface DragState {
+  isDragging: boolean;
+  message: string;
+}
+
+export const LivePreview: React.FC<LivePreviewProps> = ({ code, isGenerating, onFileUpload }) => {
   const [renderedComponent, setRenderedComponent] = useState<React.ReactNode | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [dragState, setDragState] = useState<DragState>({
+    isDragging: false,
+    message: 'Déposez votre fichier PDF ici'
+  });
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleDrag = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDragIn = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragState(prev => ({...prev, isDragging: true}));
+  }, []);
+
+  const handleDragOut = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragState(prev => ({...prev, isDragging: false}));
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragState(prev => ({...prev, isDragging: false}));
+
+    const files = Array.from(e.dataTransfer.files);
+    const pdfFile = files.find(file => file.type === 'application/pdf');
+    
+    if (pdfFile && onFileUpload) {
+      onFileUpload(pdfFile);
+    }
+  }, [onFileUpload]);
+
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && onFileUpload) {
+      onFileUpload(file);
+    }
+  }, [onFileUpload]);
 
   useEffect(() => {
     try {
@@ -139,7 +188,40 @@ export const LivePreview: React.FC<LivePreviewProps> = ({ code, isGenerating }) 
   }
 
   return (
-    <div className="h-full bg-white">
+    <div 
+      className="h-full bg-white relative"
+      onDragEnter={handleDragIn}
+      onDragLeave={handleDragOut}
+      onDragOver={handleDrag}
+      onDrop={handleDrop}
+    >
+      {dragState.isDragging && (
+        <div className="absolute inset-0 bg-blue-50 bg-opacity-90 flex items-center justify-center z-50 border-2 border-dashed border-blue-500 rounded-lg">
+          <div className="text-center">
+            <FileText className="w-12 h-12 text-blue-500 mx-auto mb-2" />
+            <p className="text-blue-600 font-medium">{dragState.message}</p>
+          </div>
+        </div>
+      )}
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".pdf"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
+      
+      <div className="absolute top-4 right-4 z-10">
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-all flex items-center gap-2"
+        >
+          <Upload size={16} className="text-gray-600" />
+          <span className="text-sm text-gray-600">Importer un PDF</span>
+        </button>
+      </div>
+
       {isGenerating ? (
         <div className="p-4 space-y-4">
           <h2 className="text-2xl font-bold">Preview</h2>
