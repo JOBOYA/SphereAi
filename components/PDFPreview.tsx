@@ -1,15 +1,12 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Document, Page } from 'react-pdf';
+import React, { useState, useEffect, useRef } from 'react';
+import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
 import { Minus, Plus } from 'lucide-react';
 
-// Configuration du worker PDF.js de manière conditionnelle
-const pdfWorkerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${process.env.NEXT_PUBLIC_PDFJS_VERSION || '3.4.120'}/pdf.worker.min.js`;
-
+// Configuration du worker PDF.js
 if (typeof window !== 'undefined') {
-  const { pdfjs } = require('react-pdf');
-  pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
+  pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 }
 
 interface PDFPreviewProps {
@@ -26,7 +23,6 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ file }) => {
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState(1);
   const [url, setUrl] = useState<string>('');
-  const [displayedPages, setDisplayedPages] = useState<number[]>([1]);
   const [zoomLevel, setZoomLevel] = useState(100);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -62,46 +58,6 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ file }) => {
       contentRef.current.style.transformOrigin = 'top center';
     }
   };
-
-  const togglePageDisplay = (pageNum: number) => {
-    setDisplayedPages(prev => {
-      if (prev.includes(pageNum)) {
-        return prev.filter(p => p !== pageNum);
-      } else {
-        return [...prev, pageNum].sort((a, b) => a - b);
-      }
-    });
-  };
-
-  const showAllPages = () => {
-    setDisplayedPages(Array.from({ length: numPages }, (_, i) => i + 1));
-  };
-
-  const showSinglePage = () => {
-    setDisplayedPages([pageNumber]);
-  };
-
-  const PageComponent = React.memo(({ pageNum }: { pageNum: number }) => (
-    <div className="mb-4 last:mb-0">
-      <div className="pdf-page">
-        <Page 
-          pageNumber={pageNum}
-          loading={<LoadingComponent />}
-          className="shadow-lg bg-white"
-          renderAnnotationLayer={false}
-          renderTextLayer={false}
-          width={600}
-        />
-      </div>
-      {displayedPages.length > 1 && (
-        <p className="text-center text-sm text-gray-500 mt-2">
-          Page {pageNum}
-        </p>
-      )}
-    </div>
-  ));
-
-  PageComponent.displayName = 'PageComponent';
 
   return (
     <div className="flex flex-col h-full">
@@ -139,53 +95,39 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ file }) => {
           </div>
           <div className="flex gap-2">
             <button
-              onClick={showSinglePage}
-              className="px-3 py-1 text-sm bg-white rounded-md hover:bg-gray-100 border"
+              onClick={() => setPageNumber(Math.max(1, pageNumber - 1))}
+              disabled={pageNumber <= 1}
+              className="px-3 py-1 text-sm bg-white rounded-md hover:bg-gray-100 border disabled:opacity-50"
             >
-              Page unique
+              Précédent
             </button>
+            <span className="px-3 py-1 text-sm">
+              Page {pageNumber} sur {numPages}
+            </span>
             <button
-              onClick={showAllPages}
-              className="px-3 py-1 text-sm bg-white rounded-md hover:bg-gray-100 border"
+              onClick={() => setPageNumber(Math.min(numPages, pageNumber + 1))}
+              disabled={pageNumber >= numPages}
+              className="px-3 py-1 text-sm bg-white rounded-md hover:bg-gray-100 border disabled:opacity-50"
             >
-              Toutes les pages
+              Suivant
             </button>
           </div>
         </div>
-
-        {numPages > 1 && (
-          <div className="flex items-center gap-2 overflow-x-auto py-2">
-            {Array.from({ length: numPages }, (_, i) => i + 1).map((num) => (
-              <button
-                key={num}
-                onClick={() => togglePageDisplay(num)}
-                className={`px-3 py-1 text-sm rounded-md border transition-colors
-                  ${displayedPages.includes(num)
-                    ? 'bg-blue-500 text-white border-blue-500'
-                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-                  }`}
-              >
-                {num}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
 
       <div className="flex-1 overflow-auto min-h-0 bg-gray-50 rounded-lg">
-        <div className="flex flex-col items-center p-4 gap-4">
+        <div className="flex flex-col items-center p-4">
           <div ref={contentRef} className="transform-gpu transition-transform duration-100">
             <Document
               file={url}
-              onLoadSuccess={({ numPages: nextNumPages }) => {
-                setNumPages(nextNumPages);
-                setDisplayedPages([1]);
-              }}
+              onLoadSuccess={({ numPages }) => setNumPages(numPages)}
               loading={<LoadingComponent />}
             >
-              {displayedPages.map(pageNum => (
-                <PageComponent key={pageNum} pageNum={pageNum} />
-              ))}
+              <Page 
+                pageNumber={pageNumber}
+                loading={<LoadingComponent />}
+                className="shadow-lg bg-white"
+              />
             </Document>
           </div>
         </div>
