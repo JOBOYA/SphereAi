@@ -1,19 +1,21 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
   images: {
-    domains: [
-      "api.microlink.io", // Microlink Image Preview
-    ],
-    remotePatterns: [ {
+    domains: ['api.microlink.io'],
+    remotePatterns: [
+      {
         protocol: 'https',
-        hostname: 'img.clerk.com',
-        port: '',        
-      },],
+        hostname: 'api.microlink.io',
+        port: '',
+        pathname: '/**',
+      },
+    ],
   },
-  env: {
-    // Exemple : API_URL: process.env.API_URL
+  webpack: (config) => {
+    config.resolve.alias.canvas = false;
+    config.resolve.alias.encoding = false;
+    return config;
   },
-};
+}
 
 module.exports = nextConfig;

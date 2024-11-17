@@ -1,24 +1,13 @@
-import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const { getToken } = auth();
-    const token = await getToken();
-    
-    if (!token) {
-      return NextResponse.json(
-        { error: "Token non disponible" },
-        { status: 401 }
-      );
-    }
-    
-    return NextResponse.json({ token });
+    const headersList = headers();
+    // ... reste du code
   } catch (error) {
-    console.error("Erreur lors de la récupération du token:", error);
-    return NextResponse.json(
-      { error: "Erreur lors de la récupération du token" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Erreur lors de la récupération du token' }, { status: 500 });
   }
 } 
