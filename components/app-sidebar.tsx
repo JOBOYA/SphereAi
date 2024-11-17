@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/sidebar";
 import { UserButton, useUser } from "@clerk/nextjs";
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -111,32 +111,58 @@ interface Conversation {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useUser();
   const pathname = usePathname();
+  const router = useRouter();
   const [conversations, setConversations] = React.useState<Conversation[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [conversationToDelete, setConversationToDelete] = React.useState<string | null>(null);
 
-  // Récupérer les conversations au chargement
-  React.useEffect(() => {
-    const fetchConversations = async () => {
-      try {
-        const accessToken = localStorage.getItem('accessToken');
-        if (!accessToken) return;
+  // Déplacer fetchConversations en dehors du useEffect pour pouvoir l'appeler ailleurs
+  const fetchConversations = async () => {
+    try {
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) return;
 
-        const response = await fetch('https://appai.charlesagostinelli.com/api/user-conversations/', {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`
-          }
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setConversations(data);
+      const response = await fetch('https://appai.charlesagostinelli.com/api/user-conversations/', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
         }
-      } catch (error) {
-        console.error('Erreur lors de la récupération des conversations:', error);
-      }
-    };
+      });
 
+      if (response.ok) {
+        const data = await response.json();
+        console.log("=== Détails des conversations ===");
+        console.log("Toutes les conversations:", data);
+        
+        if (data.length > 0) {
+          const firstConv = data[0];
+          console.log("=== Première conversation ===");
+          console.log("ID complet:", firstConv.conversation_id);
+          console.log("Format de l'ID:", {
+            full: firstConv.conversation_id,
+            parts: firstConv.conversation_id.split('_'),
+            created: firstConv.created_at,
+            timestamp: new Date(firstConv.created_at).getTime()
+          });
+        }
+
+        // Trier les conversations par date de création
+        data.sort((a: Conversation, b: Conversation) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        console.log("=== Conversations triées ===");
+        console.log("IDs dans l'ordre:", data.map((conv: { conversation_id: any; created_at: any; }) => ({
+          id: conv.conversation_id,
+          created: conv.created_at
+        })));
+
+        setConversations(data);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des conversations:', error);
+    }
+  };
+
+  // useEffect pour le chargement initial
+  React.useEffect(() => {
     fetchConversations();
   }, []);
 
@@ -153,18 +179,57 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       const accessToken = localStorage.getItem('accessToken');
       if (!accessToken) return;
 
-      const response = await fetch(`https://appai.charlesagostinelli.com/api/delete-conversation/${conversationToDelete}`, {
+      // Debug des informations
+      console.log("ID reçu:", conversationToDelete);
+      
+      // Extraire le numéro d'ID selon le format
+      let numericId;
+      if (conversationToDelete.includes('_')) {
+        // Ancien format: conv_123456_xyz
+        numericId = conversationToDelete.split('_')[1];
+      } else {
+        // Nouveau format: juste le nombre
+        numericId = conversationToDelete;
+      }
+
+      if (!numericId) {
+        console.error("ID numérique non trouvé:", conversationToDelete);
+        return;
+      }
+
+      console.log("ID numérique à supprimer:", numericId);
+      
+      // Utiliser l'endpoint delete-conversation avec le nombre
+      const url = `https://appai.charlesagostinelli.com/api/delete-conversation/${numericId}/`;
+      console.log("URL de suppression:", url);
+      
+      const response = await fetch(url, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${accessToken}`
         }
       });
 
+      console.log("Statut de la réponse:", response.status);
+      const responseText = await response.text();
+      console.log("Réponse brute:", responseText);
+
       if (response.ok) {
-        // Mettre à jour la liste des conversations
-        setConversations(conversations.filter(
-          conv => conv.conversation_id !== conversationToDelete
-        ));
+        console.log("Suppression réussie");
+        await fetchConversations();
+
+        if (pathname.includes(conversationToDelete)) {
+          router.push('/dashboard');
+        }
+      } else {
+        let errorMessage;
+        try {
+          const errorData = JSON.parse(responseText);
+          errorMessage = errorData.error || 'Erreur inconnue';
+        } catch (e) {
+          errorMessage = responseText;
+        }
+        throw new Error(`Erreur ${response.status}: ${errorMessage}`);
       }
     } catch (error) {
       console.error('Erreur lors de la suppression:', error);
@@ -173,8 +238,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       setConversationToDelete(null);
     }
   };
-
-  return (
+  
+    return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         Sphere AI
@@ -189,23 +254,25 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               const firstMessage = conv.messages[0]?.content || 'Nouvelle conversation';
               const shortTitle = firstMessage.slice(0, 30) + (firstMessage.length > 30 ? '...' : '');
               
+              const conversationId = conv.conversation_id;
+              
               return (
                 <div
-                  key={conv.conversation_id}
+                  key={conversationId}
                   className="group relative"
                 >
                   <Link
-                    href={`/chat/${conv.conversation_id}`}
+                    href={`/chat/${conversationId}`}
                     className={cn(
                       "flex items-center gap-3 rounded-lg px-3 py-2 text-gray-500 transition-all hover:text-gray-900 text-sm pr-10",
-                      pathname === `/chat/${conv.conversation_id}` && "bg-gray-100 text-gray-900"
+                      pathname === `/chat/${conversationId}` && "bg-gray-100 text-gray-900"
                     )}
                   >
                     <MessageSquare className="h-4 w-4" />
                     <span className="truncate">{shortTitle}</span>
                   </Link>
                   <button
-                    onClick={(e) => handleDeleteClick(e, conv.conversation_id)}
+                    onClick={(e) => handleDeleteClick(e, conversationId)}
                     className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-200 rounded"
                   >
                     <Trash2 className="h-4 w-4 text-gray-500 hover:text-red-500" />

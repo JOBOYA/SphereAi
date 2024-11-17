@@ -25,29 +25,29 @@ export const authService = {
     try {
       console.log("🔄 Début du processus de login");
       
-      // Récupérer d'abord le clerk token
+      // Vérifier si on a déjà un token valide
+      const existingToken = localStorage.getItem('accessToken');
+      if (existingToken) {
+        console.log("✅ Token existant trouvé, pas besoin de login");
+        return {
+          message: "Déjà connecté",
+          tokens: {
+            access: existingToken,
+            refresh: ""
+          },
+          user: {
+            id: 0,
+            email: userData.email,
+            api_calls_remaining: 0
+          }
+        };
+      }
+      
+      // Récupérer le clerk token
       const clerkToken = await this.getClerkToken();
       
-      // Tenter d'abord l'inscription
-      let response = await fetch("/api/proxy/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${clerkToken}`
-        },
-        body: JSON.stringify({
-          email: userData.email
-        })
-      });
-
-      if (!response.ok && response.status !== 400) {
-        const errorData = await response.json();
-        console.error("❌ Erreur inscription:", errorData);
-        throw new Error(errorData.detail || "Erreur lors de l'inscription");
-      }
-
-      // Une fois inscrit (ou si l'utilisateur existe déjà), on fait le login
-      response = await fetch("/api/proxy/login", {
+      // Faire directement le login sans register
+      const response = await fetch("/api/proxy/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -59,17 +59,19 @@ export const authService = {
       });
 
       if (!response.ok) {
+        // Si l'utilisateur n'existe pas, alors faire le register
+        if (response.status === 404) {
+          await this.register({ email: userData.email });
+          return this.login(userData); // Réessayer le login après register
+        }
         const errorData = await response.json();
-        console.error("❌ Erreur login:", errorData);
         throw new Error(errorData.detail || "Erreur d'authentification");
       }
 
       const data = await response.json();
       console.log("✅ Login réussi");
       
-      // Stocker le token d'accès dans le localStorage
       localStorage.setItem('accessToken', data.tokens.access);
-      
       return data;
     } catch (error: any) {
       console.error("🚨 Erreur d'authentification:", error);

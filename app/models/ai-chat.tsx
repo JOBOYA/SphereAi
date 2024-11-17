@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, User, Bot, Loader2, Copy, Check, Sparkles, Split, Upload } from 'lucide-react';
+import { Send, User, Bot, Loader2, Copy, Check, Sparkles, Split, Upload, Trash2 } from 'lucide-react';
 import * as Avatar from '@radix-ui/react-avatar';
 import { Theme } from '@radix-ui/themes';
 import '@radix-ui/themes/styles.css';
@@ -108,9 +108,12 @@ export function AIChat() {
     const pathParts = pathname.split('/');
     const existingConversationId = pathParts[pathParts.length - 1];
     
-    if (existingConversationId.startsWith('conv_')) {
+    if (/^\d+$/.test(existingConversationId)) {
+      console.log('ID de conversation trouvé:', existingConversationId);
       setConversationId(existingConversationId);
+      fetchConversationMessages(existingConversationId);
     } else {
+      console.log('Création d\'un nouvel ID de conversation');
       const newConversationId = generateConversationId();
       setConversationId(newConversationId);
       router.push(`/chat/${newConversationId}`);
@@ -118,7 +121,8 @@ export function AIChat() {
   }, [pathname]);
 
   const generateConversationId = () => {
-    return `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const timestamp = Date.now();
+    return timestamp.toString();
   };
 
   const sendMessage = async (message: string) => {
@@ -127,11 +131,11 @@ export function AIChat() {
         
       if (!accessToken) {
         setError('Veuillez vous connecter pour utiliser le chat');
-        return;
+        return null;
       }
 
       console.log('Envoi de la requête avec:', {
-        conversation_id: conversationId,
+        conversation_id: parseInt(conversationId),
         message: message
       });
 
@@ -142,7 +146,7 @@ export function AIChat() {
           'Authorization': `Bearer ${accessToken}`
         },
         body: JSON.stringify({ 
-          conversation_id: conversationId,
+          conversation_id: parseInt(conversationId),
           message: message
         })
       });
@@ -171,20 +175,16 @@ export function AIChat() {
         }
       }
 
-      // Vérification de la structure de la réponse
       if (data && data.api_response) {
         setApiCallsRemaining(data.api_calls_remaining);
-        setError(null);
         return data.api_response;
       } else {
-        console.error('Format de réponse invalide:', data);
         throw new Error('Format de réponse invalide');
       }
 
     } catch (error) {
       console.error('Erreur détaillée:', error);
-      setError('Une erreur est survenue lors de la communication avec l\'IA');
-      return null;
+      throw error;
     }
   };
 
@@ -208,7 +208,7 @@ export function AIChat() {
     e.preventDefault();
     if (!inputMessage.trim() || isLoading) return;
 
-    console.log('🚀 Début handleSubmit avec message:', inputMessage);
+    console.log('Début handleSubmit avec message:', inputMessage);
 
     const newMessage: Message = {
       id: Date.now().toString(),
@@ -217,55 +217,46 @@ export function AIChat() {
       timestamp: new Date(),
     };
 
-    const tempAiMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      content: "",
-      role: 'assistant',
-      timestamp: new Date(),
-    };
-
-    setMessages(prev => [...prev, newMessage, tempAiMessage]);
+    setMessages(prev => [...prev, newMessage]);
     setInputMessage('');
     setIsLoading(true);
-    setIsGenerating(true);
     setLoadingPhase('dots');
 
     try {
-      console.log('📡 Envoi du message avec conversationId:', conversationId);
-      const responseMessage = await sendMessage(inputMessage);
-      console.log('✅ Réponse reçue:', responseMessage);
+      const response = await sendMessage(inputMessage);
+      console.log('Réponse reçue de l\'API:', response);
       
-      if (responseMessage) {
+      if (response) {
         setLoadingPhase('typing');
         
-        // Mise à jour immédiate pour voir la réponse
-        setMessages(prev => prev.map(msg => 
-          msg.id === tempAiMessage.id 
-            ? { ...msg, content: responseMessage }
-            : msg
-        ));
+        const aiMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: response,
+          role: 'assistant',
+          timestamp: new Date(),
+        };
 
-        // Mise à jour du texte pour l'effet de typing
-        setTypingText(responseMessage);
-      } else {
-        console.log('⚠️ Pas de réponse reçue');
-        // Gérer le cas où il n'y a pas de réponse
-        setMessages(prev => prev.map(msg => 
-          msg.id === tempAiMessage.id 
-            ? { ...msg, content: "Désolé, je n'ai pas pu générer une réponse. Veuillez réessayer." }
-            : msg
-        ));
+        setMessages(prev => [...prev, aiMessage]);
+        
+        setTypingText(response);
+        
+        if (typeof response === 'object' && 'api_calls_remaining' in response) {
+          setApiCallsRemaining(response.api_calls_remaining);
+        }
       }
     } catch (error) {
-      console.error('❌ Erreur dans handleSubmit:', error);
-      setMessages(prev => prev.map(msg => 
-        msg.id === tempAiMessage.id 
-          ? { ...msg, content: "Une erreur est survenue lors de la communication avec l'IA." }
-          : msg
-      ));
+      console.error('Erreur dans handleSubmit:', error);
+      setError('Une erreur est survenue lors de l\'envoi du message');
+      
+      const errorMessage: Message = {
+        id: Date.now().toString(),
+        content: "Désolé, une erreur est survenue lors de l'envoi du message.",
+        role: 'assistant',
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
-      setIsGenerating(false);
       setLoadingPhase(null);
     }
   };
@@ -327,7 +318,6 @@ export function AIChat() {
     
     let code = match[1].trim();
 
-    // Si le code ne contient pas de composant React, l'envelopper dans un composant
     if (!code.includes('function') && !code.includes('const')) {
       code = `
         function Component(props) {
@@ -398,7 +388,6 @@ export function AIChat() {
 
   const PreviewSkeleton = () => (
     <div className="h-full flex flex-col p-4 space-y-4">
-      {/* En-tête */}
       <div className="space-y-2">
         <Skeleton className="h-6 w-[40%] mb-4" />
         <Skeleton className="h-4 w-[90%]" />
@@ -406,30 +395,25 @@ export function AIChat() {
         <Skeleton className="h-4 w-[80%]" />
       </div>
 
-      {/* Corps avec flex-grow pour prendre l'espace restant */}
       <div className="flex-grow space-y-3">
-        {/* Première section */}
         <div className="space-y-2">
           <Skeleton className="h-4 w-[75%]" />
           <Skeleton className="h-4 w-[100%]" />
           <Skeleton className="h-4 w-[90%]" />
         </div>
 
-        {/* Deuxième section */}
         <div className="space-y-2 mt-4">
           <Skeleton className="h-4 w-[85%]" />
           <Skeleton className="h-4 w-[95%]" />
           <Skeleton className="h-4 w-[70%]" />
         </div>
 
-        {/* Troisième section */}
         <div className="space-y-2 mt-4">
           <Skeleton className="h-4 w-[80%]" />
           <Skeleton className="h-4 w-[100%]" />
           <Skeleton className="h-4 w-[60%]" />
         </div>
 
-        {/* Liste ou tableau */}
         <div className="grid grid-cols-3 gap-2 mt-4">
           {[...Array(6)].map((_, i) => (
             <Skeleton key={i} className="h-4" />
@@ -461,14 +445,13 @@ export function AIChat() {
       const data = await response.json();
       setConversations(data);
 
-      // Si on a un conversationId actif, charger les messages de cette conversation
       if (conversationId) {
         const currentConversation = data.find(
-          (conv: Conversation) => conv.conversation_id === conversationId
+          (conv: any) => conv.conversation_id === conversationId
         );
         
         if (currentConversation) {
-          const formattedMessages = currentConversation.messages.map((msg: ConversationMessage) => ({
+          const formattedMessages = currentConversation.messages.map((msg: any) => ({
             id: Date.now().toString() + Math.random(),
             content: msg.content,
             role: msg.is_user_message ? 'user' : 'assistant',
@@ -489,33 +472,50 @@ export function AIChat() {
     }
   }, [user, conversationId]);
 
-  useEffect(() => {
-    const pathParts = pathname.split('/');
-    const existingConversationId = pathParts[pathParts.length - 1];
-    
-    if (existingConversationId.startsWith('conv_')) {
-      setConversationId(existingConversationId);
-      // Charger les messages de cette conversation
+  const fetchConversationMessages = async (convId: string) => {
+    try {
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) return;
+
+      const response = await fetch('https://appai.charlesagostinelli.com/api/user-conversations/', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erreur ${response.status}: ${response.statusText}`);
+      }
+
+      const conversations = await response.json();
+      console.log('Conversations reçues:', conversations);
+
       const conversation = conversations.find(
-        conv => conv.conversation_id === existingConversationId
+        (conv: any) => String(conv.conversation_id) === String(convId)
       );
-      
+
+      console.log('Conversation trouvée:', conversation);
+
       if (conversation) {
-        const formattedMessages = conversation.messages.map(msg => ({
+        const formattedMessages = conversation.messages.map((msg: any) => ({
           id: Date.now().toString() + Math.random(),
           content: msg.content,
           role: msg.is_user_message ? 'user' : 'assistant',
           timestamp: new Date(msg.timestamp)
         }));
         
-        setMessages(formattedMessages as Message[]);
+        console.log('Messages formatés:', formattedMessages);
+        setMessages(formattedMessages);
+      } else {
+        console.log('Conversation non trouvée pour ID:', convId);
+        setMessages([]); 
       }
-    } else {
-      const newConversationId = generateConversationId();
-      setConversationId(newConversationId);
-      router.push(`/chat/${newConversationId}`);
+    } catch (error) {
+      console.error('Erreur lors du chargement des messages:', error);
+      setMessages([]);
     }
-  }, [pathname, conversations]);
+  };
 
   return (
     <Theme appearance="light" accentColor="blue" radius="large">
@@ -525,8 +525,12 @@ export function AIChat() {
             <div className="grid lg:grid-cols-2 gap-2 sm:gap-4">
               <div className="flex flex-col bg-white rounded-xl border min-h-[50vh] lg:h-[calc(100vh-8rem)]">
                 <div className="flex-none px-4 sm:px-6 py-3 border-b">
-                  <h1 className="text-xl font-semibold text-gray-900">Chat IA</h1>
-                  <p className="text-sm text-gray-500">Assistant intelligent pour vous aider</p>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h1 className="text-xl font-semibold text-gray-900">Chat IA</h1>
+                      <p className="text-sm text-gray-500">Assistant intelligent pour vous aider</p>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex-1 overflow-y-auto">
@@ -553,7 +557,6 @@ export function AIChat() {
                             message.role === 'user' ? 'justify-end' : 'justify-start'
                           }`}
                         >
-                          {/* Avatar pour l'assistant */}
                           {message.role === 'assistant' && (
                             <div className="flex-shrink-0">
                               <Avatar.Root className="w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-50 border border-gray-200 flex-shrink-0">
@@ -562,14 +565,12 @@ export function AIChat() {
                             </div>
                           )}
 
-                          {/* Bulle de message */}
                           <div
                             className={`
                               relative group
                               ${message.role === 'user' ? 'items-end' : 'items-start'}
                             `}
                           >
-                            {/* Indicateur de copie uniquement pour les messages complets de l'IA */}
                             {message.role === 'assistant' && message.content && !isTyping && message.id !== messages[messages.length - 1].id && (
                               <div 
                                 className="absolute top-1 right-1 z-10"
@@ -588,7 +589,6 @@ export function AIChat() {
                               </div>
                             )}
 
-                            {/* Message principal */}
                             <div className={`
                               px-4 py-2 shadow-sm relative group cursor-pointer
                               ${message.role === 'user'
@@ -619,7 +619,6 @@ export function AIChat() {
                               </div>
                             </div>
 
-                            {/* Timestamp en petit sous le message */}
                             <div className={`
                               text-[10px] mt-1 opacity-0 group-hover:opacity-100 transition-opacity
                               ${message.role === 'user' ? 'text-right mr-1' : 'ml-1'}
@@ -632,7 +631,6 @@ export function AIChat() {
                             </div>
                           </div>
 
-                          {/* Avatar pour l'utilisateur */}
                           {message.role === 'user' && (
                             <div className="flex-shrink-0">
                               <Avatar.Root className="w-8 h-8 overflow-hidden rounded-full flex items-center justify-center bg-[#4F46E5] flex-shrink-0 ring-2 ring-white">
