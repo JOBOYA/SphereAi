@@ -5,9 +5,15 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
+<<<<<<< Updated upstream
     const headersList = headers();
     const token = headersList.get('authorization')?.split(' ')[1];
 
+=======
+    const { getToken } = auth();
+    const token = await getToken({ template: "access" });
+    
+>>>>>>> Stashed changes
     if (!token) {
       return NextResponse.json({ error: 'Token non fourni' }, { status: 401 });
     }

@@ -24,6 +24,7 @@
       }
     ],
     "paths": {
+<<<<<<< Updated upstream
       "@/*": [
         "./*"
       ]
@@ -32,6 +33,11 @@
       "./node_modules/@types",
       "./types"
     ]
+=======
+      "@/*": ["./*"]
+    },
+    "baseUrl": "."
+>>>>>>> Stashed changes
   },
   "include": [
     "next-env.d.ts",
