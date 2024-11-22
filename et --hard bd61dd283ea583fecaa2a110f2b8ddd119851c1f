@@ -1,0 +1,543 @@
+[33mcommit 04f743405d5dc5138a9c1d36d55fd0ce27212acf[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Sun Nov 17 18:01:10 2024 +0100
+
+    latence
+
+[33mcommit bd61dd283ea583fecaa2a110f2b8ddd119851c1f[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Sun Nov 17 17:51:41 2024 +0100
+
+    fix_typing
+
+[33mcommit 8584940f949ceb423db28c1814f8687b23289441[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Sun Nov 17 17:42:20 2024 +0100
+
+    delet-conv
+
+[33mcommit dc0845c8e7bd7b91c2923250e99deed653284871[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Fri Nov 15 09:32:08 2024 +0100
+
+    conversation_id
+
+[33mcommit 2b34baac7e3484cdf82a82b8983c02434232a0eb[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Fri Nov 15 09:17:04 2024 +0100
+
+    conversation_id
+
+[33mcommit c835740d79d23dde685dc2b636af4653c1555ae2[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Wed Nov 13 14:20:14 2024 +0100
+
+    add_skeleton
+
+[33mcommit 0fe3398fbffedda1b7069e44331914d9fb9e0eef[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Wed Nov 13 13:18:18 2024 +0100
+
+    deploy5
+
+[33mcommit f922cf49c55878fe93a9c571eed0b74634476ae6[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Wed Nov 13 12:09:37 2024 +0100
+
+    deploy4
+
+[33mcommit 0cfb25dbb4bf688ee959faf9a561cfd375ca2ed8[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Wed Nov 13 12:08:18 2024 +0100
+
+    deploy3
+
+[33mcommit 222fdf84ff3c8abb967bea1f41614a0aa48aa6fb[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Wed Nov 13 12:05:22 2024 +0100
+
+    feautures_preview
+
+[33mcommit ba82d85b60f26355f02ea2e5662e9ebc43cf004e[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Tue Nov 12 21:35:23 2024 +0100
+
+    fix_preview
+
+[33mcommit d6956ad20263f3f01f3e9590a565ba2532e244e2[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Tue Nov 12 20:24:04 2024 +0100
+
+    ui-chat
+
+[33mcommit c0607871aaafcea0ba70229ccba6728109037b3b[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Mon Nov 11 17:55:14 2024 +0100
+
+    preview3
+
+[33mcommit 9e7e1e4dd8faadd7fafac6fee2d6b23cd1efadc9[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Mon Nov 11 15:15:02 2024 +0100
+
+    preview2
+
+[33mcommit 66c833f474ea3dc0f84e16b2a36d996508dbd57d[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Mon Nov 11 15:03:47 2024 +0100
+
+    preview
+
+[33mcommit e137be578ae32bef971600be47fee69027533a5e[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Mon Nov 11 14:07:45 2024 +0100
+
+    limit_day
+
+[33mcommit 739f72e9e9ac846ae9db1358622e723afa29cc25[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Sun Nov 10 17:40:40 2024 +0100
+
+    fix_translations
+
+[33mcommit b6baa991b59b19ff619f0f276df5d523094c03b8[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Sun Nov 10 17:05:06 2024 +0100
+
+    modal_limit
+
+[33mcommit 189016fb3af334b9e089d2a90ff89e27b21ee319[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Sun Nov 10 15:46:04 2024 +0100
+
+    fix_middleware
+
+[33mcommit 098acd665c553eed7cd0f1c01f994493d844d1ae[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Sun Nov 10 13:09:59 2024 +0100
+
+    deployement2
+
+[33mcommit fe19d38fc9fb6ed77dd0ccd23f44bf06d2231d7a[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Sun Nov 10 13:07:30 2024 +0100
+
+    deployement
+
+[33mcommit cb345eabebd93f2311c11593cabc6a38566d47b6[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Sun Nov 10 13:04:39 2024 +0100
+
+    navLimit
+
+[33mcommit d82081eaac14936f8728b67b3008812d5e407721[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Sun Nov 10 12:50:58 2024 +0100
+
+    barChart
+
+[33mcommit 8b6c1733ed344cb9e1b20ac3422352bb2ddf28ac[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Sun Nov 10 12:43:58 2024 +0100
+
+    limit_nav
+
+[33mcommit bf45e9669b97507229295356170fd8376dec2b77[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Sun Nov 10 11:58:58 2024 +0100
+
+    apiCall
+
+[33mcommit b97c7c4b7b993627d82947326aa0fa9acda69fd6[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Sun Nov 10 11:43:52 2024 +0100
+
+    api_chat
+
+[33mcommit a9ab00690bc687d77203b96d5f4f97f08efc268d[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Sun Nov 10 11:24:01 2024 +0100
+
+    register
+
+[33mcommit f7bcaeca452dc229afd3151f1682ded21c7729e2[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Sat Nov 9 18:48:28 2024 +0100
+
+    register
+
+[33mcommit 73fd2a3f01de73c0cb322794fa931be6627ec1f0[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Sat Nov 9 17:05:29 2024 +0100
+
+    avatar_chat
+
+[33mcommit 5e3a126ae6c3a5ccbc03680c96b851faf5bbc88b[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Sat Nov 9 16:23:43 2024 +0100
+
+    chat_model
+
+[33mcommit 8f1159db7562eb785469af24ee6cfab13a8eadba[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Sat Nov 9 14:21:52 2024 +0100
+
+    chat_model
+
+[33mcommit a7b029c5e127b985b51f7b873f65c7593badc95f[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Sat Nov 9 13:48:47 2024 +0100
+
+    register
+
+[33mcommit e6a4912fab813e5858eaead28e86e8d659b446da[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Sun Oct 27 16:14:31 2024 +0100
+
+    delete_text sidebar
+
+[33mcommit e5478f2f944a01f3283aba89d79e20a0818b8363[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Sun Oct 27 15:31:35 2024 +0100
+
+    add_linkpreview
+
+[33mcommit 5fc2ce09a10397ac09813e6be6829352f49fdc1f[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Sun Oct 27 00:45:47 2024 +0200
+
+    add_language
+
+[33mcommit 5ed9a9d4971bd415fce90bc7ca21101071a60540[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Sat Oct 26 23:37:04 2024 +0200
+
+    custom_landingpage
+
+[33mcommit 4976bcba8aee6838bf7a646ad1a8e51063b56797[m
+Author: Joseph BOYADJIAN <joseph.boyadjian@koesio.com>
+Date:   Fri Oct 25 15:43:40 2024 +0200
+
+    first commit
+
+[33mcommit 2ec5d7b493a19a35a6ff6da21c3e1f46042d48f1[m
+Author: Alex Booker <booker@booker.codes>
+Date:   Fri Oct 11 13:51:11 2024 +0100
+
+    Update README.md
+
+[33mcommit 31d312171289763dec2f43b6fc12e15c5a61a90b[m
+Author: Alex Booker <booker@booker.codes>
+Date:   Fri Oct 11 13:31:37 2024 +0100
+
+    Updates and maintenance (#35)
+    
+    - Rename .env.template to .env.local in order to comply with Vercel Template Marketplace reqs
+    - Remove SIGN_IN_URL and SIGN_UP_URL environment variables because  we can rely on the default values
+    - Add *_FORCE_REDIRECT_URL environment variables to ensure the user is redirected to /dashboard on authentication, improving the user experience
+    - Update the README Vercel deploy button to use the new repository URL and environment variables
+    - Remove Learn more button to improve the user experience
+    - Update dependencies to address outdated or insecure packages
+
+[33mcommit 9b2b41d4c7eed8d6d01dfd5ca3c693507f72b270[m
+Author: Kyle MacDonald <kylemac@users.noreply.github.com>
+Date:   Thu Oct 10 13:39:13 2024 -0400
+
+    Update README.md
+
+[33mcommit 772b4a532cd63cdfa22fb937a77208db554277da[m
+Author: Domitrius <domitriusaclark@gmail.com>
+Date:   Mon Jun 17 17:24:03 2024 -0400
+
+    updated to latest clerk
+
+[33mcommit a0397fc6940e9b273592cf5bd222ec7cbe7ebde2[m
+Merge: 2cb3c3a 09e5e2b
+Author: Nick Parsons <nparsons@clerk.dev>
+Date:   Mon Jun 17 15:24:02 2024 -0600
+
+    Merge pull request #33 from clerk/np/update-links
+    
+    Update links
+
+[33mcommit 09e5e2b0da03c6679db6dd87715e371c96c391d0[m
+Author: Nick Parsons <nparsons@clerk.dev>
+Date:   Mon Jun 17 15:22:31 2024 -0600
+
+    Update links
+
+[33mcommit 2cb3c3a51c600152cfccc07a3c59b5542c0392a5[m
+Author: Domitrius <domitriusaclark@gmail.com>
+Date:   Mon Jun 17 16:51:08 2024 -0400
+
+    Revert to pre 15 until stable
+
+[33mcommit 8bc1156c5f3d213464a9ed457a3d931bcde75cd7[m
+Author: Domitrius <domitriusaclark@gmail.com>
+Date:   Mon Jun 3 18:14:50 2024 -0400
+
+    added new logo components to home page as well
+
+[33mcommit 7e4fec175f309bdf4d6da2f07150a7319bd22d97[m
+Author: Domitrius <domitriusaclark@gmail.com>
+Date:   Mon Jun 3 18:13:06 2024 -0400
+
+    moved logo svg's to their own components to clean up the dashboard
+
+[33mcommit 650646f9409bd5cbaf9fffb93fa6fb91e2e685bb[m
+Merge: f1f4500 317a664
+Author: Domitrius <domitriusaclark@gmail.com>
+Date:   Mon Jun 3 17:54:49 2024 -0400
+
+    Merge pull request #32 from clerk/fixing-broken-dashboard-route
+    
+    upgraded to next 15 and react 19 & moved route protection to middleware
+
+[33mcommit 317a664277078b5db13e05c066d5c8fa9a081860[m
+Author: Domitrius <domitriusaclark@gmail.com>
+Date:   Mon Jun 3 17:47:16 2024 -0400
+
+    upgraded to next 15 and react 19 & moved route protection to middleware
+
+[33mcommit f1f45001f239971aa047846947b17f5003495620[m
+Author: Domitrius <domitriusaclark@gmail.com>
+Date:   Mon Jun 3 16:40:16 2024 -0400
+
+    revert upgrades
+
+[33mcommit 372e11402ccc475acf9d6a04dcb85602b6708b62[m
+Author: Domitrius <domitriusaclark@gmail.com>
+Date:   Mon Jun 3 16:37:04 2024 -0400
+
+    Revert "Merge pull request #29 from clerk/fix-syntax-highlighting"
+    
+    This reverts commit b1f08d9866328d4b65a1cf4512a83e58b346d698, reversing
+    changes made to f90c569a23f5dfacce600f3e6506e9000c048b57.
+
+[33mcommit a4bd27353f7d602c032f7924803e5be73bd61041[m
+Merge: b1f08d9 cfd066d
+Author: Domitrius <domitriusaclark@gmail.com>
+Date:   Mon Jun 3 16:17:37 2024 -0400
+
+    Merge pull request #31 from clerk/upgrade-next
+    
+    upgraded next & react to release candidates
+
+[33mcommit cfd066da99438219437e6b0414ffeac425287566[m
+Author: Domitrius <domitriusaclark@gmail.com>
+Date:   Mon Jun 3 15:57:46 2024 -0400
+
+    copied versions from CNA & removed reliance on geist as a package
+
+[33mcommit dfc0bd0ae58b03b7afedcd5a230d2b0edb6437e6[m
+Author: Domitrius <domitriusaclark@gmail.com>
+Date:   Mon Jun 3 15:16:33 2024 -0400
+
+    upgraded next & react to release candidates
+
+[33mcommit b1f08d9866328d4b65a1cf4512a83e58b346d698[m
+Merge: f90c569 42ff59b
+Author: Emil Kowalski <36730035+emilkowalski@users.noreply.github.com>
+Date:   Thu May 2 17:41:27 2024 +0200
+
+    Merge pull request #29 from clerk/fix-syntax-highlighting
+    
+    Wrap json code in useMemo
+
+[33mcommit 42ff59bd030b6950059d2e7c3226a3405a6d59ac[m
+Author: Emil Kowalski <e@emilkowal.ski>
+Date:   Thu May 2 17:38:42 2024 +0200
+
+    Wrap json code in useMemo
+
+[33mcommit f90c569a23f5dfacce600f3e6506e9000c048b57[m
+Author: Domitrius <domitriusaclark@gmail.com>
+Date:   Wed May 1 16:48:08 2024 -0400
+
+    Update README.md
+    
+    updated more broken links & how to report issues
+
+[33mcommit 938edccc30922be7c656f12f5666928eda67cafb[m
+Author: Domitrius <domitriusaclark@gmail.com>
+Date:   Wed May 1 15:40:42 2024 -0400
+
+    Update README.md
+    
+    fixed broken clone link in readme
+
+[33mcommit 9d78f575e2f9f327fcb550aa25472e018635ae8b[m
+Author: Domitrius <domitriusaclark@gmail.com>
+Date:   Tue Apr 30 19:26:52 2024 -0400
+
+    added the rest of the env variables for deploy button
+
+[33mcommit 0ee7a28504f5adad3cb5c2f9ec227cec103838ed[m
+Author: Domitrius <domitriusaclark@gmail.com>
+Date:   Tue Apr 30 19:17:56 2024 -0400
+
+    removed redirect on deploy button
+
+[33mcommit 2ef4403815fbb59748d9ad971d01739514961d15[m
+Author: Domitrius <domitriusaclark@gmail.com>
+Date:   Tue Apr 30 19:10:35 2024 -0400
+
+    fixed deploy to vercel button
+
+[33mcommit f209908d1290d75c5788f0218a2850f2774330d6[m
+Author: Braden Sidoti <braden@clerk.dev>
+Date:   Tue Apr 30 15:40:06 2024 -0600
+
+    change repo link
+
+[33mcommit c813e959eebfba0d348165edbb5031df161fd549[m
+Author: Braden Sidoti <braden@clerk.dev>
+Date:   Tue Apr 30 15:35:26 2024 -0600
+
+    card content changes
+
+[33mcommit e3f3b31f73f1d26ffcad21894d40a1d536f7260c[m
+Author: Domitrius <domitriusaclark@gmail.com>
+Date:   Tue Apr 30 12:27:28 2024 -0400
+
+    Update README.md
+    
+    removed dead space in learn more
+
+[33mcommit 9fa8b47ac0a6a707d2730ccacb13126cad97dee9[m
+Author: Domitrius <domitriusaclark@gmail.com>
+Date:   Tue Apr 30 12:26:50 2024 -0400
+
+    Update README.md
+    
+    updated live demo link
+
+[33mcommit bcd23cc4c3a35be9059679adb8bb02f91c8ebc43[m
+Author: Domitrius <domitriusaclark@gmail.com>
+Date:   Tue Apr 30 12:19:11 2024 -0400
+
+    updated CTA links
+
+[33mcommit 7b68a60c8dec587debe6c88021fe6cdf6c03748f[m
+Author: Domitrius <domitriusaclark@gmail.com>
+Date:   Tue Apr 30 11:52:17 2024 -0400
+
+    Update README.md
+    
+    Fixing blank space in README steps
+
+[33mcommit aeb3f7fb2527029c9a020fabc89c6f0d6171074d[m
+Merge: 77dc150 b9ce2f9
+Author: Domitrius <domitriusaclark@gmail.com>
+Date:   Tue Apr 30 11:25:12 2024 -0400
+
+    Merge pull request #25 from clerk/new-starter-template-design
+    
+    New starter template design
+
+[33mcommit b9ce2f9993f397d49d98c58adab350e6d8c7b0c0[m
+Author: Austin Calvelage <austin.calvelage@icloud.com>
+Date:   Mon Apr 29 16:20:50 2024 -0600
+
+    Swap classNames for clsx
+
+[33mcommit cc9e94ca2487ca075d4c12b7a736801306fd00b2[m
+Author: Domitrius <domitriusaclark@gmail.com>
+Date:   Mon Apr 29 18:30:25 2024 -0400
+
+    Updated dashboard CTA cards with new copy and steps
+
+[33mcommit 6308356a0ccc603ffbbbbbca5392b0a6a5f5b269[m
+Author: Austin Calvelage <austin.calvelage@icloud.com>
+Date:   Mon Apr 29 16:10:36 2024 -0600
+
+    classNames function unneeded
+
+[33mcommit 59dfdf2865d8309e6a20973d1fbb9c2ef2178c72[m
+Author: Domitrius <domitriusaclark@gmail.com>
+Date:   Mon Apr 29 17:57:57 2024 -0400
+
+    fixed conflicts
+
+[33mcommit af39d76120e172526eb36bf2fa29ee641f286653[m
+Author: Austin Calvelage <austin.calvelage@icloud.com>
+Date:   Mon Apr 29 15:55:39 2024 -0600
+
+    Center “Clerk” in footer
+
+[33mcommit 384cc9b2ca82636a1ff454b836bb68c1913b350d[m
+Author: Austin Calvelage <austin.calvelage@icloud.com>
+Date:   Mon Apr 29 15:44:10 2024 -0600
+
+    px to rem
+
+[33mcommit 5d848c2a23619cde25048ef6347cf2317f17a375[m
+Author: Austin Calvelage <austin.calvelage@icloud.com>
+Date:   Mon Apr 29 15:37:29 2024 -0600
+
+    Remove unneeded flex classes
+
+[33mcommit 533110f5b7725949eb546b2cb0205e020b6d1586[m
+Author: Austin Calvelage <austin.calvelage@icloud.com>
+Date:   Mon Apr 29 15:37:14 2024 -0600
+
+    Add key to LearnMore map
+
+[33mcommit d29cefe9d3636653563efd05733da4dbf03051d0[m
+Author: Austin Calvelage <austin.calvelage@icloud.com>
+Date:   Mon Apr 29 15:31:25 2024 -0600
+
+    Add width to className / remove style attribute
+
+[33mcommit 82d56a6e2e8c6c0ba2d4b2fc574f65ab9b98be95[m
+Author: Austin Calvelage <austin.calvelage@icloud.com>
+Date:   Mon Apr 29 15:22:45 2024 -0600
+
+    Fix link background color
+
+[33mcommit b4349699d5af340af29d1cca9cfeb067e50cd781[m
+Author: Derek Briggs <derek.briggs@me.com>
+Date:   Mon Apr 29 14:14:45 2024 -0600
+
+    Update app/components/user-details.tsx
+    
+    Co-authored-by: Austin Calvelage <austin.calvelage@icloud.com>
+
+[33mcommit 9efda2ddb2d0d1bb97272980fb0a10a4a3636352[m
+Author: Derek Briggs <derek.briggs@me.com>
+Date:   Mon Apr 29 14:13:48 2024 -0600
+
+    Update app/components/code-switcher.tsx
+    
+    Co-authored-by: Austin Calvelage <austin.calvelage@icloud.com>
+
+[33mcommit ed71df4370ec532aa92deb6babfe65fadf0cd6f5[m
+Merge: f5cdd4c 77dc150
+Author: skullface <skullface@users.noreply.github.com>
+Date:   Thu Apr 25 12:02:38 2024 -0400
+
+    Merge branch 'main' of https://github.com/clerk/clerk-nextjs-demo-app-router into new-starter-template-design
+
+[33mcommit 77dc150617650c6ffe9cc746220018a21dc3d9a6[m
+Merge: 17cfbab 81db186
+Author: Derek Briggs <derek.briggs@me.com>
+Date:   Thu Apr 18 16:22:59 2024 -0600
+
+    Merge pull request #10 from johnpolacek/patch-1
+    
+    Fix svg attribute syntax
+
+[33mcommit f5cdd4cce5d44ab4df974d752e5a24fe4d260ade[m
+Merge: 49b906e 457f0d7
+Author: Derek Briggs <derek.briggs@me.com>
+Date:   Thu Apr 18 16:21:48 2024 -0600
+
+    Merge pull request #26 from clerk/roy/minor-updates
+    
+    A few minor updates and cleanup
+
+[33mcommit 457f0d7aca1a905e0a3a92f6117d810f4d395825[m
+Author: Roy Anger <roy@royanger.com>
+Date:   Thu Apr 18 17:04:42 2024 -0400
+
+    Re-added @ts-expect-error -- missed that trying to cherry pick actual changes vs formatting changes
