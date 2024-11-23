@@ -5,6 +5,7 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
 
+// Configurez le worker PDF.js avec un CDN plus fiable
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 interface PDFPreviewProps {
@@ -14,36 +15,42 @@ interface PDFPreviewProps {
 export default function PDFPreview({ file }: PDFPreviewProps) {
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
+  const [isLoading, setIsLoading] = useState(true);
 
-  function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
+  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
-  }
+    setIsLoading(false);
+  };
 
   if (!file) return null;
 
   return (
     <div className="pdf-preview">
-      <Document
-        file={file}
-        onLoadSuccess={onDocumentLoadSuccess}
-      >
-        <div className="pdf-document">
-          <Page 
-            pageNumber={pageNumber} 
-          />
-        </div>
-      </Document>
-      
+      <div className="pdf-container">
+        {isLoading && <div className="loading">Chargement du PDF...</div>}
+        
+        <Document
+          file={file}
+          onLoadSuccess={onDocumentLoadSuccess}
+        >
+          {numPages > 0 ? (
+            <div className="pdf-page">
+              <Page pageNumber={pageNumber} />
+            </div>
+          ) : null}
+        </Document>
+      </div>
+
       <div className="pdf-controls">
-        <p>
-          Page {pageNumber} sur {numPages}
-        </p>
         <button
           disabled={pageNumber <= 1}
           onClick={() => setPageNumber(pageNumber - 1)}
         >
           Précédent
         </button>
+        <p>
+          Page {pageNumber} sur {numPages}
+        </p>
         <button
           disabled={pageNumber >= numPages}
           onClick={() => setPageNumber(pageNumber + 1)}
@@ -57,18 +64,58 @@ export default function PDFPreview({ file }: PDFPreviewProps) {
           width: 100%;
           max-width: 800px;
           margin: 0 auto;
-        }
-        .pdf-document {
           display: flex;
           flex-direction: column;
           align-items: center;
         }
-        .pdf-controls {
+        .pdf-container {
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          min-height: 500px;
+          position: relative;
+        }
+        .loading {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          padding: 1rem;
+          background: rgba(255, 255, 255, 0.9);
+          border-radius: 4px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .pdf-page {
+          margin: 1rem 0;
+          border: 1px solid #eaeaea;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          width: 100%;
           display: flex;
           justify-content: center;
-          align-items: center;
-          gap: 1rem;
+          overflow: auto;
+        }
+        .pdf-page > div {
+          max-width: 100% !important;
+          height: auto !important;
+        }
+        .pdf-page canvas {
+          max-width: 100% !important;
+          height: auto !important;
+        }
+        :global(.react-pdf__Page) {
+          max-width: 100%;
+          height: auto !important;
+        }
+        :global(.react-pdf__Page__canvas) {
+          max-width: 100% !important;
+          height: auto !important;
+        }
+        .pdf-controls {
           margin-top: 1rem;
+          display: flex;
+          gap: 1rem;
+          align-items: center;
         }
         button {
           padding: 0.5rem 1rem;
@@ -80,7 +127,6 @@ export default function PDFPreview({ file }: PDFPreviewProps) {
         }
         button:disabled {
           background-color: #ccc;
-          cursor: not-allowed;
         }
       `}</style>
     </div>
