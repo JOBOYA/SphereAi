@@ -12,6 +12,7 @@ import {
   Code2,
   User,
   Trash2,
+  Mic,
 } from "lucide-react";
 
 import { NavMain } from "@/components/nav-main";
@@ -51,6 +52,11 @@ const data = {
         {
           title: "Chat",
           url: "/dashboard",
+        },
+        {
+          title: "Transcription Vocale",
+          url: "/transcription",
+          icon: Mic,
         }
       ],
     },

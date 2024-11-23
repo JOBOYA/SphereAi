@@ -3,7 +3,9 @@ import { authMiddleware } from "@clerk/nextjs/server";
 export default authMiddleware({
     publicRoutes: [
         "/",  
-        "/api/auth/getToken"   
+        "/api/auth/getToken",
+        "/sign-in",
+        "/sign-up"   
     ],
     afterAuth(auth, req, evt) {
         // Obtenir le chemin de l'URL
@@ -27,6 +29,8 @@ export const config = {
         '/',
         '/(api|trpc)(.*)',
         '/api/chat',
-        '/api/user-conversations'
+        '/api/user-conversations',
+        '/transcription',
+        '/api/transcription'
     ],
 };
