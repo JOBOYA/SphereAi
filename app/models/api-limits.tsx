@@ -98,120 +98,139 @@ export function ApiLimits() {
   const usedCalls = 1000 - stats.api_calls_remaining;
   const chartData = callLogs.dates
     .map((date, index) => ({
-      période: date === new Date().toISOString().split('T')[0] ? "Aujourd'hui" : date,
+      période: date === new Date().toISOString().split('T')[0] ? "Aujourd'hui" : new Date(date).toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit'
+      }),
       utilisés: callLogs.call_counts[index],
-      restants: 1000 - callLogs.call_counts[index]
+      restants: 1000 - callLogs.call_counts[index],
+      dateOriginal: date
     }))
     .sort((a, b) => {
-      if (a.période === "Aujourd'hui") return 1;
-      if (b.période === "Aujourd'hui") return -1;
-      return new Date(b.période).getTime() - new Date(a.période).getTime();
+      return new Date(a.dateOriginal).getTime() - new Date(b.dateOriginal).getTime();
     });
 
   return (
     <>
       <div className="flex flex-col h-full w-full p-6">
-        <div className="grid gap-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="p-4 bg-white shadow-sm">
-              <h3 className="text-sm font-medium text-gray-500">Appels restants</h3>
-              <div className="mt-2">
-                <div className="text-3xl font-bold text-green-600">
-                  {stats.api_calls_remaining}
+        <div className="flex flex-col gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">Total utilisé</p>
+                  <p className="text-2xl font-bold">{1000 - (stats?.api_calls_remaining || 0)}</p>
                 </div>
-                <p className="text-sm text-gray-400 mt-1">
-                  sur 1000 appels totaux
-                </p>
+                <div className="p-3 bg-blue-100 rounded-full">
+                  <TrendingUp className="h-6 w-6 text-blue-600" />
+                </div>
               </div>
             </Card>
 
-            <Card className="p-4 bg-white shadow-sm">
-              <h3 className="text-sm font-medium text-gray-500">Appels utilisés</h3>
-              <div className="mt-2">
-                <div className="text-3xl font-bold text-blue-600">
-                  {usedCalls}
+            <Card className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">Limite quotidienne</p>
+                  <p className="text-2xl font-bold">1000</p>
                 </div>
-                <p className="text-sm text-gray-400 mt-1">
-                  {((usedCalls / 1000) * 100).toFixed(1)}% utilisés
-                </p>
+                <div className="p-3 bg-green-100 rounded-full">
+                  <Sparkles className="h-6 w-6 text-green-600" />
+                </div>
               </div>
             </Card>
 
-            <Card className="p-4 bg-white shadow-sm">
-              <h3 className="text-sm font-medium text-gray-500">Limite quotidienne</h3>
-              <div className="mt-2">
-                <div className="text-3xl font-bold">
-                  1000
+            <Card className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">Pourcentage utilisé</p>
+                  <p className="text-2xl font-bold">
+                    {((1000 - (stats?.api_calls_remaining || 0)) / 1000 * 100).toFixed(1)}%
+                  </p>
                 </div>
-                <p className="text-sm text-gray-400 mt-1">
-                  Réinitialisation quotidienne
-                </p>
+                <div className="p-3 bg-purple-100 rounded-full">
+                  <AlertCircle className="h-6 w-6 text-purple-600" />
+                </div>
               </div>
             </Card>
           </div>
 
-          <Card className="p-4 bg-white shadow-sm">
-            <div>
-              <h3 className="text-base font-medium">Utilisation des appels API</h3>
-              <p className="text-sm text-gray-500">Répartition des appels utilisés et restants</p>
-            </div>
-            
-            <div className="h-[200px] w-full mt-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} barSize={20}>
-                  <CartesianGrid 
-                    strokeDasharray="3 3" 
-                    vertical={false}
-                    stroke="#E5E7EB"
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="p-4 flex justify-center items-center">
+              <div className="relative w-48 h-48">
+                <svg className="w-full h-full" viewBox="0 0 100 100">
+                  <circle
+                    className="text-gray-100"
+                    strokeWidth="12"
+                    stroke="currentColor"
+                    fill="transparent"
+                    r="42"
+                    cx="50"
+                    cy="50"
                   />
-                  <XAxis
-                    dataKey="période"
-                    tickLine={false}
-                    axisLine={false}
-                    fontSize={12}
+                  <circle
+                    className="text-indigo-500"
+                    strokeWidth="12"
+                    strokeLinecap="round"
+                    stroke="currentColor"
+                    fill="transparent"
+                    r="42"
+                    cx="50"
+                    cy="50"
+                    strokeDasharray={`${(stats?.api_calls_remaining || 0) / 10 * 2.639}, 264`}
+                    transform="rotate(-90 50 50)"
                   />
-                  <Tooltip 
-                    cursor={{ fill: 'transparent' }}
-                    contentStyle={{ 
-                      backgroundColor: 'white',
-                      border: 'none',
-                      borderRadius: '8px',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                    }}
-                    formatter={(value, name) => {
-                      return [`${value}`, name === 'utilisés' ? 'utilisés' : 'restants']
-                    }}
-                    labelStyle={{
-                      color: '#6B7280',
-                      fontSize: '12px'
-                    }}
-                  />
-                  <Bar 
-                    dataKey="utilisés" 
-                    fill="#4F46E5" 
-                    radius={[2, 2, 0, 0]}
-                    stackId="a"
-                  />
-                  <Bar 
-                    dataKey="restants" 
-                    fill="#10B981" 
-                    radius={[2, 2, 0, 0]}
-                    stackId="a"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+                </svg>
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
+                  <div className="text-3xl font-bold">{stats?.api_calls_remaining}</div>
+                  <div className="text-sm text-gray-500">appels restants</div>
+                  <div className="text-sm font-medium text-indigo-500">
+                    {((stats?.api_calls_remaining || 0) / 1000 * 100).toFixed(1)}%
+                  </div>
+                </div>
+              </div>
+            </Card>
 
-            <div className="mt-4 text-sm">
-              <div className="flex items-center gap-2 text-gray-700">
-                <span>{stats.api_calls_remaining} appels API disponibles</span>
-                <TrendingUp className="h-4 w-4" />
+            <Card className="p-4">
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData} barSize={40}>
+                    <CartesianGrid 
+                      strokeDasharray="3 3" 
+                      vertical={false}
+                      stroke="#f1f5f9"
+                    />
+                    <XAxis
+                      dataKey="période"
+                      tickLine={false}
+                      axisLine={false}
+                      fontSize={12}
+                      stroke="#94a3b8"
+                    />
+                    <Tooltip 
+                      cursor={{ fill: '#f8fafc' }}
+                      contentStyle={{ 
+                        backgroundColor: 'white',
+                        borderRadius: '8px',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                        border: 'none'
+                      }}
+                    />
+                    <Bar 
+                      dataKey="utilisés" 
+                      fill="url(#gradientBar)"
+                      radius={[6, 6, 0, 0]}
+                    />
+                    <defs>
+                      <linearGradient id="gradientBar" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#818cf8" />
+                        <stop offset="100%" stopColor="#6366f1" />
+                      </linearGradient>
+                    </defs>
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
-              <div className="text-gray-500 text-xs">
-                Limite quotidienne de 1000 appels
-              </div>
-            </div>
-          </Card>
+            </Card>
+          </div>
         </div>
       </div>
 
