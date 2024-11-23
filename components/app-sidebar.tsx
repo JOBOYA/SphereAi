@@ -52,9 +52,10 @@ const data = {
         {
           title: "Chat",
           url: "/dashboard",
+          icon: MessageSquare,
         },
         {
-          title: "Transcription Vocale",
+          title: "Voice",
           url: "/transcription",
           icon: Mic,
         }
@@ -69,18 +70,22 @@ const data = {
         {
           title: "General",
           url: "#",
+          icon: Settings,
         },
         {
           title: "Team",
           url: "#",
+          icon: User,
         },
         {
           title: "Billing",
           url: "#",
+          icon: Code2,
         },
         {
           title: "Limits",
           url: "/dashboard/limits",
+          icon: PieChart,
         },
       ],
     },
