@@ -18,23 +18,39 @@ export default function CSVPreview({ file }: CSVPreviewProps) {
 
     const parseCSV = async () => {
       setIsLoading(true);
-      
-      if (file instanceof File) {
-        Papa.parse(file, {
-          complete: (results) => {
+      try {
+        if (file instanceof File) {
+          Papa.parse(file, {
+            complete: (results) => {
+              if (results.errors.length > 0) {
+                console.error('Erreurs lors du parsing CSV:', results.errors);
+              }
+              setData(results.data as Array<Array<string>>);
+              setIsLoading(false);
+            },
+            error: (error) => {
+              console.error('Erreur lors de la lecture du CSV:', error);
+              setIsLoading(false);
+            },
+            header: false,
+            skipEmptyLines: true
+          });
+        } else if (typeof file === 'string') {
+          try {
+            const response = await fetch(file);
+            const text = await response.text();
+            const results = Papa.parse(text, {
+              header: false,
+              skipEmptyLines: true
+            });
             setData(results.data as Array<Array<string>>);
-            setIsLoading(false);
-          },
-          error: (error) => {
-            console.error('Erreur lors de la lecture du CSV:', error);
-            setIsLoading(false);
+          } catch (error) {
+            console.error('Erreur lors de la lecture du CSV depuis URL:', error);
           }
-        });
-      } else if (typeof file === 'string') {
-        const response = await fetch(file);
-        const text = await response.text();
-        const results = Papa.parse(text);
-        setData(results.data as Array<Array<string>>);
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Erreur générale lors du parsing CSV:', error);
         setIsLoading(false);
       }
     };
@@ -50,122 +66,87 @@ export default function CSVPreview({ file }: CSVPreviewProps) {
   if (!file) return null;
 
   return (
-    <div className="csv-preview">
-      <div className="csv-container">
+    <div className="w-full h-full flex flex-col">
+      <div className="flex-1 overflow-hidden min-h-0">
         {isLoading ? (
-          <div className="loading">Chargement du CSV...</div>
+          <div className="h-full flex justify-center items-center">
+            <div>Chargement du CSV...</div>
+          </div>
         ) : (
-          <div className="table-container">
-            <table>
-              <thead>
-                {currentData.length > 0 && (
-                  <tr>
-                    {currentData[0].map((header, index) => (
-                      <th key={index}>{header}</th>
-                    ))}
-                  </tr>
-                )}
-              </thead>
-              <tbody>
-                {currentData.slice(1).map((row, rowIndex) => (
-                  <tr key={rowIndex}>
-                    {row.map((cell, cellIndex) => (
-                      <td key={cellIndex}>{cell}</td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="h-full overflow-auto p-2 sm:p-4">
+            <div className="w-full overflow-x-auto">
+              <table className="w-full table-auto border-collapse bg-white shadow-sm">
+                <thead>
+                  {currentData.length > 0 && (
+                    <tr>
+                      {currentData[0].map((header, index) => (
+                        <th 
+                          key={index}
+                          className="sticky top-0 bg-gray-50 px-2 sm:px-3 py-2 border border-gray-200 font-semibold text-left z-10 whitespace-nowrap"
+                        >
+                          {header}
+                        </th>
+                      ))}
+                    </tr>
+                  )}
+                </thead>
+                <tbody>
+                  {currentData.slice(1).map((row, rowIndex) => (
+                    <tr key={rowIndex} className={rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                      {row.map((cell, cellIndex) => (
+                        <td 
+                          key={cellIndex}
+                          className="px-2 sm:px-3 py-2 border border-gray-200 text-left whitespace-nowrap overflow-hidden text-ellipsis max-w-[100px] sm:max-w-[200px] md:max-w-[300px]"
+                        >
+                          {cell}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
 
-      <div className="csv-controls">
+      <div className="flex items-center justify-center gap-3 sm:gap-6 p-3 sm:p-4 bg-white border-t border-gray-200">
         <button
           disabled={currentPage <= 1}
           onClick={() => setCurrentPage(currentPage - 1)}
+          className="inline-flex items-center gap-1 px-3 sm:px-4 py-1.5 sm:py-2 text-sm font-medium rounded-md 
+          bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 
+          disabled:bg-gray-50 disabled:text-gray-400 disabled:border-gray-200 
+          disabled:cursor-not-allowed transition-colors"
         >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
           Précédent
         </button>
-        <p>
-          Page {currentPage} sur {totalPages}
-        </p>
+
+        <div className="flex items-center gap-1.5">
+          <span className="text-sm font-medium text-gray-700">Page</span>
+          <span className="px-2.5 py-1 text-sm font-semibold text-gray-900 bg-gray-100 rounded-md">
+            {currentPage}
+          </span>
+          <span className="text-sm font-medium text-gray-700">sur {totalPages}</span>
+        </div>
+
         <button
           disabled={currentPage >= totalPages}
           onClick={() => setCurrentPage(currentPage + 1)}
+          className="inline-flex items-center gap-1 px-3 sm:px-4 py-1.5 sm:py-2 text-sm font-medium rounded-md 
+          bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 
+          disabled:bg-gray-50 disabled:text-gray-400 disabled:border-gray-200 
+          disabled:cursor-not-allowed transition-colors"
         >
           Suivant
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
         </button>
       </div>
-
-      <style jsx>{`
-        .csv-preview {
-          width: 100%;
-          max-width: 1200px;
-          margin: 0 auto;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-        }
-        .csv-container {
-          width: 100%;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          min-height: 500px;
-          position: relative;
-        }
-        .loading {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          padding: 1rem;
-          background: rgba(255, 255, 255, 0.9);
-          border-radius: 4px;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .table-container {
-          width: 100%;
-          overflow-x: auto;
-          margin: 1rem 0;
-        }
-        table {
-          width: 100%;
-          border-collapse: collapse;
-          background: white;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        th, td {
-          padding: 0.75rem;
-          text-align: left;
-          border: 1px solid #eaeaea;
-        }
-        th {
-          background-color: #f8f9fa;
-          font-weight: 600;
-        }
-        tr:nth-child(even) {
-          background-color: #f8f9fa;
-        }
-        .csv-controls {
-          margin-top: 1rem;
-          display: flex;
-          gap: 1rem;
-          align-items: center;
-        }
-        button {
-          padding: 0.5rem 1rem;
-          border: none;
-          border-radius: 4px;
-          background-color: #0070f3;
-          color: white;
-          cursor: pointer;
-        }
-        button:disabled {
-          background-color: #ccc;
-        }
-      `}</style>
     </div>
   );
 } 

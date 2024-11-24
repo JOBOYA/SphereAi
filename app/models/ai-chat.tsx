@@ -243,22 +243,26 @@ export function AIChat() {
 
   const handleFileUpload = async (file: File) => {
     try {
-      if (file.type !== 'application/pdf') {
-        setError('Seuls les fichiers PDF sont acceptés');
-        return;
+      if (file.type === 'application/pdf') {
+        setPreview({
+          isVisible: true,
+          content: `Fichier PDF chargé\n\nNom du fichier: ${file.name}\nTaille: ${(file.size / 1024).toFixed(2)} KB`,
+          type: 'pdf',
+          file: file
+        });
+        const extractedText = await extractTextFromPDF(file);
+        setExtractedPdfText(extractedText);
+      } 
+      else if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
+        setPreview({
+          isVisible: true,
+          content: `Fichier CSV chargé\n\nNom du fichier: ${file.name}\nTaille: ${(file.size / 1024).toFixed(2)} KB`,
+          type: 'csv',
+          file: file
+        });
+      } else {
+        setError('Format de fichier non supporté. Seuls les fichiers PDF et CSV sont acceptés');
       }
-
-      setPreview({
-        isVisible: true,
-        content: `Fichier PDF chargé\n\nNom du fichier: ${file.name}\nTaille: ${(file.size / 1024).toFixed(2)} KB`,
-        type: 'pdf',
-        file: file
-      });
-
-      // Extraire le texte du PDF
-      const extractedText = await extractTextFromPDF(file);
-      setExtractedPdfText(extractedText);
-
     } catch (error) {
       console.error('Erreur lors du chargement du fichier:', error);
       setError('Une erreur est survenue lors du chargement du fichier');
@@ -380,26 +384,30 @@ export function AIChat() {
     }
   };
 
-  const analyzePDFWithAI = async () => {
-    if (!extractedPdfText) {
-      setError('Aucun texte PDF à analyser');
+  const analyzeFileWithAI = async () => {
+    if (!extractedPdfText && (!preview.file || preview.type !== 'csv')) {
+      setError('Aucun contenu à analyser');
       return;
     }
 
-    // Créer un nouveau AbortController pour cette requête
     const controller = new AbortController();
     setAbortController(controller);
 
-    const prompt = `Je viens de charger un PDF avec le contenu suivant:\n\n${extractedPdfText}\n\nPouvez-vous analyser ce contenu et me dire de quoi il s'agit ?`;
+    let prompt = '';
+    if (preview.type === 'pdf' && extractedPdfText) {
+      prompt = `Je viens de charger un PDF avec le contenu suivant:\n\n${extractedPdfText}\n\nPouvez-vous analyser ce contenu et me dire de quoi il s'agit ?`;
+    } else if (preview.type === 'csv' && preview.file) {
+      prompt = `Je viens de charger un fichier CSV nommé "${preview.file.name}". Pouvez-vous analyser son contenu et me donner un résumé des données qu'il contient ?`;
+    }
     
-    const pdfMessage: Message = {
+    const fileMessage: Message = {
       id: Date.now().toString(),
-      content: `[PDF Chargé] Veuillez analyser le contenu de ce document.`,
+      content: `[${preview.type.toUpperCase()} Chargé] Veuillez analyser le contenu de ce document.`,
       role: 'user',
       timestamp: new Date(),
     };
     
-    setMessages(prevMessages => [...prevMessages, pdfMessage]);
+    setMessages(prevMessages => [...prevMessages, fileMessage]);
     
     const tempAiMessage: Message = {
       id: (Date.now() + 1).toString(),
@@ -457,13 +465,13 @@ export function AIChat() {
           )
         );
       } else {
-        console.error('Erreur détaillée lors de l\'analyse du PDF:', error);
-        setError('Une erreur est survenue lors de l\'analyse du PDF');
+        console.error('Erreur lors de l\'analyse:', error);
+        setError('Une erreur est survenue lors de l\'analyse');
         
         setMessages(prevMessages => 
           prevMessages.map(msg => 
             msg.id === tempAiMessage.id 
-              ? { ...msg, content: "Désolé, une erreur est survenue lors de l'analyse du PDF." }
+              ? { ...msg, content: "Désolé, une erreur est survenue lors de l'analyse." }
               : msg
           )
         );
@@ -520,7 +528,7 @@ export function AIChat() {
                 preview={preview}
                 extractedPdfText={extractedPdfText}
                 isLoading={isLoading}
-                onAnalyze={analyzePDFWithAI}
+                onAnalyze={analyzeFileWithAI}
                 onFileUpload={handleFileUpload}
               />
             </div>

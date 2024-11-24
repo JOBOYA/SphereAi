@@ -4,23 +4,8 @@ import dynamic from 'next/dynamic';
 import { PreviewState } from '@/app/types/chat';
 import { useDropzone } from 'react-dropzone';
 
-const PDFPreview = dynamic(() => import('@/components/PDFPreview'), {
-  loading: () => (
-    <div className="flex items-center justify-center p-4">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-    </div>
-  ),
-  ssr: false
-});
-
-const CSVPreview = dynamic(() => import('@/components/CSVPreview'), {
-  loading: () => (
-    <div className="flex items-center justify-center p-4">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-    </div>
-  ),
-  ssr: false
-});
+const PDFPreview = dynamic(() => import('../PDFPreview'), { ssr: false });
+const CSVPreview = dynamic(() => import('../CSVPreview'), { ssr: false });
 
 interface PreviewPanelProps {
   preview: PreviewState;
@@ -60,12 +45,54 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
   const renderPreview = () => {
     if (!preview.file) return null;
 
-    if (preview.type === 'pdf') {
-      return <PDFPreview file={preview.file} />;
-    } else if (preview.type === 'csv') {
-      return <CSVPreview file={preview.file} />;
-    }
-    return null;
+    return (
+      <div className="p-4">
+        <div className="mb-4 flex justify-between items-center">
+          <div>
+            <h3 className="text-lg font-medium">Fichier {preview.type.toUpperCase()} chargé</h3>
+            <p className="text-sm text-gray-500">
+              {preview.file.name} ({(preview.file.size / 1024).toFixed(2)} KB)
+            </p>
+          </div>
+          <label 
+            className="inline-flex items-center px-3 py-1.5 rounded-md border border-gray-300 
+                       bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 
+                       cursor-pointer transition-colors"
+          >
+            <svg 
+              className="w-4 h-4 mr-1.5" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                strokeWidth={2} 
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+              />
+            </svg>
+            Remplacer
+            <input
+              type="file"
+              className="hidden"
+              accept=".pdf,.csv"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  onFileUpload(file);
+                }
+              }}
+            />
+          </label>
+        </div>
+        {preview.type === 'pdf' ? (
+          <PDFPreview file={preview.file} />
+        ) : (
+          <CSVPreview file={preview.file} />
+        )}
+      </div>
+    );
   };
 
   const shouldShowAnalyzeButton = () => {
@@ -94,15 +121,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
       </div>
       <div className="flex-1 overflow-hidden">
         {preview.file ? (
-          <div className="p-4">
-            <div className="mb-4">
-              <h3 className="text-lg font-medium">Fichier {preview.type.toUpperCase()} chargé</h3>
-              <p className="text-sm text-gray-500">
-                {preview.file.name} ({(preview.file.size / 1024).toFixed(2)} KB)
-              </p>
-            </div>
-            {renderPreview()}
-          </div>
+          renderPreview()
         ) : (
           <div
             {...getRootProps()}
