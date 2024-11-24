@@ -8,7 +8,7 @@ export interface Message {
 export interface PreviewState {
   isVisible: boolean;
   content: string | null;
-  type: 'text' | 'image' | 'pdf';
+  type: 'text' | 'image' | 'pdf' | 'csv';
   file?: File | null;
 }
 

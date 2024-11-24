@@ -13,9 +13,19 @@ const PDFPreview = dynamic(() => import('@/components/PDFPreview'), {
   ssr: false
 });
 
+const CSVPreview = dynamic(() => import('@/components/CSVPreview'), {
+  loading: () => (
+    <div className="flex items-center justify-center p-4">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+    </div>
+  ),
+  ssr: false
+});
+
 interface PreviewPanelProps {
   preview: PreviewState;
   extractedPdfText: string | null;
+  extractedCsvText?: string | null;
   isLoading: boolean;
   onAnalyze: () => void;
   onFileUpload: (file: File) => void;
@@ -24,6 +34,7 @@ interface PreviewPanelProps {
 export const PreviewPanel: React.FC<PreviewPanelProps> = ({
   preview,
   extractedPdfText,
+  extractedCsvText,
   isLoading,
   onAnalyze,
   onFileUpload,
@@ -32,7 +43,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
-    if (file && file.type === 'application/pdf') {
+    if (file && (file.type === 'application/pdf' || file.type === 'text/csv' || file.name.endsWith('.csv'))) {
       onFileUpload(file);
     }
   }, [onFileUpload]);
@@ -40,17 +51,36 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      'application/pdf': ['.pdf']
+      'application/pdf': ['.pdf'],
+      'text/csv': ['.csv']
     },
     multiple: false
   });
+
+  const renderPreview = () => {
+    if (!preview.file) return null;
+
+    if (preview.type === 'pdf') {
+      return <PDFPreview file={preview.file} />;
+    } else if (preview.type === 'csv') {
+      return <CSVPreview file={preview.file} />;
+    }
+    return null;
+  };
+
+  const shouldShowAnalyzeButton = () => {
+    if (isLoading) return false;
+    if (preview.type === 'pdf' && extractedPdfText) return true;
+    if (preview.type === 'csv') return true;
+    return false;
+  };
 
   return (
     <div className="flex flex-col bg-white rounded-xl border min-h-[30vh] lg:h-[calc(100vh-8rem)]">
       <div className="flex-none px-4 sm:px-6 py-3 border-b">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold text-gray-900">Preview</h2>
-          {extractedPdfText && (
+          {shouldShowAnalyzeButton() && (
             <button
               onClick={onAnalyze}
               disabled={isLoading}
@@ -63,15 +93,15 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
         </div>
       </div>
       <div className="flex-1 overflow-hidden">
-        {preview.type === 'pdf' && preview.file ? (
+        {preview.file ? (
           <div className="p-4">
             <div className="mb-4">
-              <h3 className="text-lg font-medium">Fichier PDF chargé</h3>
+              <h3 className="text-lg font-medium">Fichier {preview.type.toUpperCase()} chargé</h3>
               <p className="text-sm text-gray-500">
                 {preview.file.name} ({(preview.file.size / 1024).toFixed(2)} KB)
               </p>
             </div>
-            <PDFPreview file={preview.file} />
+            {renderPreview()}
           </div>
         ) : (
           <div
@@ -86,7 +116,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
             <div className="text-center">
               <Upload size={40} className="mx-auto mb-4 text-gray-400" />
               <p className="text-lg font-medium text-gray-900">
-                {isDragActive ? 'Déposez le fichier ici' : 'Glissez-déposez un fichier PDF'}
+                {isDragActive ? 'Déposez le fichier ici' : 'Glissez-déposez un fichier PDF ou CSV'}
               </p>
               <p className="text-sm text-gray-500 mt-2">
                 ou cliquez pour sélectionner un fichier

@@ -7,6 +7,7 @@ import { Mic, Loader2, StopCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { AudioRecorder, useAudioRecorder } from 'react-audio-voice-recorder';
+import { useAuth } from '@/app/contexts/AuthContext';
 
 export default function TranscriptionPage() {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -25,6 +26,8 @@ export default function TranscriptionPage() {
 
   const { isRecording, recordingBlob } = recorderControls;
 
+  const { accessToken } = useAuth();
+
   useEffect(() => {
     if (!recordingBlob) return;
     processAudio(recordingBlob);
@@ -36,16 +39,18 @@ export default function TranscriptionPage() {
       const formData = new FormData();
       formData.append('audio', blob);
 
-      const accessToken = localStorage.getItem('accessToken');
-      
       if (!accessToken) {
         throw new Error('Token d\'accès non disponible');
       }
 
+      const formattedToken = accessToken.startsWith('Bearer ') 
+        ? accessToken 
+        : `Bearer ${accessToken}`;
+
       const response = await fetch('/api/transcription', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
+          'Authorization': formattedToken,
         },
         body: formData,
       });
