@@ -3,20 +3,34 @@ import { authMiddleware } from "@clerk/nextjs/server";
 export default authMiddleware({
     publicRoutes: [
         "/",  
-        "/api/auth/getToken",
+        "/api/(.*)",  // Permet tous les appels API
         "/login",
         "/register",
-        "/dashboard"
+        "/dashboard",
+        "/_next/static/(.*)",  // Permet l'accès aux ressources statiques
+        "/favicon.ico",
+        "/api/auth/(.*)",      // Routes d'authentification
+        "/api/webhook/(.*)"    // Webhooks
+    ],
+    ignoredRoutes: [
+        "/api/auth/(.*)",      // Ignore le middleware pour ces routes
+        "/api/webhook/(.*)",
+        "/_next/static/(.*)",
+        "/favicon.ico"
     ],
     afterAuth(auth, req, evt) {
         const path = new URL(req.url).pathname;
+        const isApiRoute = path.startsWith('/api/');
 
-        // Si l'utilisateur n'est pas connecté et essaie d'accéder à une route protégée
+        // Ne pas rediriger les appels API
+        if (isApiRoute) {
+            return;
+        }
+
         if (!auth.userId && !path.startsWith('/login') && !path.startsWith('/register') && !path.startsWith('/')) {
             return Response.redirect(new URL('/login', req.url));
         }
 
-        // Si l'utilisateur est connecté et sur une page d'authentification
         if (auth.userId && (path.startsWith('/login') || path.startsWith('/register'))) {
             return Response.redirect(new URL('/dashboard', req.url));
         }
@@ -25,12 +39,8 @@ export default authMiddleware({
 
 export const config = {
     matcher: [
-        '/((?!.+\\.[\\w]+$|_next).*)',
-        '/',
-        '/(api|trpc)(.*)',
-        '/api/chat',
-        '/api/user-conversations',
-        '/transcription',
-        '/api/transcription'
+        "/((?!.*\\..*|_next).*)",
+        "/",
+        "/(api|trpc)(.*)",
     ],
 };
