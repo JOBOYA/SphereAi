@@ -38,6 +38,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { chatService } from '@/app/services/chat-service';
+import { useAuth } from '@/app/contexts/AuthContext';
+import { useState, useRef, useEffect } from 'react';
 
 // Sample data
 const data = {
@@ -121,61 +124,54 @@ interface Conversation {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useUser();
+  const { accessToken } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const [conversations, setConversations] = React.useState<Conversation[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [conversationToDelete, setConversationToDelete] = React.useState<string | null>(null);
+  const [loadingConversation, setLoadingConversation] = useState<string | null>(null);
+  const [typingConversation, setTypingConversation] = useState<string | null>(null);
 
-  // Déplacer fetchConversations en dehors du useEffect pour pouvoir l'appeler ailleurs
+  // Utiliser le service chat pour récupérer les conversations
   const fetchConversations = async () => {
     try {
-      const accessToken = localStorage.getItem('accessToken');
-      if (!accessToken) return;
-
-      const response = await fetch('https://appai.charlesagostinelli.com/api/user-conversations/', {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log("=== Détails des conversations ===");
-        console.log("Toutes les conversations:", data);
-        
-        if (data.length > 0) {
-          const firstConv = data[0];
-          console.log("=== Première conversation ===");
-          console.log("ID complet:", firstConv.conversation_id);
-          console.log("Format de l'ID:", {
-            full: firstConv.conversation_id,
-            parts: firstConv.conversation_id.split('_'),
-            created: firstConv.created_at,
-            timestamp: new Date(firstConv.created_at).getTime()
-          });
-        }
-
-        // Trier les conversations par date de création
-        data.sort((a: Conversation, b: Conversation) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        console.log("=== Conversations triées ===");
-        console.log("IDs dans l'ordre:", data.map((conv: { conversation_id: any; created_at: any; }) => ({
-          id: conv.conversation_id,
-          created: conv.created_at
-        })));
-
-        setConversations(data);
+      if (!accessToken) {
+        console.log('❌ Pas de token disponible');
+        return;
       }
+
+      const formattedToken = accessToken.startsWith('Bearer ') 
+        ? accessToken 
+        : `Bearer ${accessToken}`;
+
+      const data = await chatService.fetchConversations(formattedToken);
+      console.log("=== Détails des conversations ===");
+      console.log("Toutes les conversations:", data);
+      
+      if (data.length > 0) {
+        const firstConv = data[0];
+        console.log("=== Première conversation ===");
+        console.log("ID complet:", firstConv.conversation_id);
+      }
+
+      // Trier les conversations par date de création
+      data.sort((a: Conversation, b: Conversation) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      setConversations(data);
     } catch (error) {
       console.error('Erreur lors de la récupération des conversations:', error);
     }
   };
 
-  // useEffect pour le chargement initial
+  // Charger les conversations quand le token change
   React.useEffect(() => {
-    fetchConversations();
-  }, []);
+    if (accessToken) {
+      fetchConversations();
+    }
+  }, [accessToken]);
 
   const handleDeleteClick = (e: React.MouseEvent, conversationId: string) => {
     e.preventDefault(); // Empêcher la navigation
@@ -184,73 +180,70 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   };
 
   const handleDeleteConfirm = async () => {
-    if (!conversationToDelete) return;
+    if (!conversationToDelete || !accessToken) return;
 
     try {
-      const accessToken = localStorage.getItem('accessToken');
-      if (!accessToken) return;
-
-      // Debug des informations
-      console.log("ID reçu:", conversationToDelete);
+      console.log("🗑️ Suppression conversation:", conversationToDelete);
       
-      // Extraire le numéro d'ID selon le format
-      let numericId;
-      if (conversationToDelete.includes('_')) {
-        // Ancien format: conv_123456_xyz
-        numericId = conversationToDelete.split('_')[1];
-      } else {
-        // Nouveau format: juste le nombre
-        numericId = conversationToDelete;
-      }
+      const formattedToken = accessToken.startsWith('Bearer ') 
+        ? accessToken 
+        : `Bearer ${accessToken}`;
 
-      if (!numericId) {
-        console.error("ID numérique non trouvé:", conversationToDelete);
-        return;
-      }
-
-      console.log("ID numérique à supprimer:", numericId);
-      
-      // Utiliser l'endpoint delete-conversation avec le nombre
-      const url = `https://appai.charlesagostinelli.com/api/delete-conversation/${numericId}/`;
-      console.log("URL de suppression:", url);
-      
-      const response = await fetch(url, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`
+      const response = await fetch(
+        `https://appai.charlesagostinelli.com/api/delete-conversation/${conversationToDelete}/`, 
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': formattedToken
+          }
         }
-      });
+      );
 
-      console.log("Statut de la réponse:", response.status);
-      const responseText = await response.text();
-      console.log("Réponse brute:", responseText);
+      console.log("📥 Statut suppression:", response.status);
 
       if (response.ok) {
-        console.log("Suppression réussie");
+        console.log("✅ Suppression réussie");
+        // Recharger les conversations
         await fetchConversations();
 
+        // Rediriger si on est sur la conversation supprimée
         if (pathname.includes(conversationToDelete)) {
           router.push('/dashboard');
         }
       } else {
-        let errorMessage;
-        try {
-          const errorData = JSON.parse(responseText);
-          errorMessage = errorData.error || 'Erreur inconnue';
-        } catch (e) {
-          errorMessage = responseText;
-        }
-        throw new Error(`Erreur ${response.status}: ${errorMessage}`);
+        const errorText = await response.text();
+        console.error("❌ Erreur suppression:", errorText);
+        throw new Error(`Erreur ${response.status}: ${errorText}`);
       }
     } catch (error) {
-      console.error('Erreur lors de la suppression:', error);
+      console.error('🚨 Erreur lors de la suppression:', error);
     } finally {
       setDeleteDialogOpen(false);
       setConversationToDelete(null);
     }
   };
-  
-    return (
+
+  // Fonction pour mettre à jour les conversations
+  const updateConversations = async (conversationId: string) => {
+    setTypingConversation(conversationId);
+    try {
+      await fetchConversations();
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Effet de typing
+    } finally {
+      setTypingConversation(null);
+    }
+  };
+
+  // Exposer la fonction via un ref pour qu'elle soit accessible depuis AIChat
+  useEffect(() => {
+    if (window) {
+      (window as any).sidebarRef = {
+        updateConversations
+      };
+    }
+  }, []);
+
+  return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         Sphere AI
@@ -264,26 +257,44 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             {conversations.map((conv) => {
               const firstMessage = conv.messages[0]?.content || 'Nouvelle conversation';
               const shortTitle = firstMessage.slice(0, 30) + (firstMessage.length > 30 ? '...' : '');
-              
-              const conversationId = conv.conversation_id;
+              const isTyping = typingConversation === conv.conversation_id;
               
               return (
                 <div
-                  key={conversationId}
+                  key={conv.conversation_id}
                   className="group relative"
                 >
                   <Link
-                    href={`/chat/${conversationId}`}
+                    href={`/chat/${conv.conversation_id}`}
                     className={cn(
                       "flex items-center gap-3 rounded-lg px-3 py-2 text-gray-500 transition-all hover:text-gray-900 text-sm pr-10",
-                      pathname === `/chat/${conversationId}` && "bg-gray-100 text-gray-900"
+                      pathname === `/chat/${conv.conversation_id}` && "bg-gray-100 text-gray-900"
                     )}
                   >
                     <MessageSquare className="h-4 w-4" />
-                    <span className="truncate">{shortTitle}</span>
+                    <span className="truncate">
+                      {isTyping ? (
+                        <span className="inline-flex">
+                          {shortTitle.split('').map((char, index) => (
+                            <span
+                              key={index}
+                              className="animate-fade-in"
+                              style={{
+                                animationDelay: `${index * 50}ms`,
+                                opacity: 0
+                              }}
+                            >
+                              {char}
+                            </span>
+                          ))}
+                        </span>
+                      ) : (
+                        shortTitle
+                      )}
+                    </span>
                   </Link>
                   <button
-                    onClick={(e) => handleDeleteClick(e, conversationId)}
+                    onClick={(e) => handleDeleteClick(e, conv.conversation_id)}
                     className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-200 rounded"
                   >
                     <Trash2 className="h-4 w-4 text-gray-500 hover:text-red-500" />
@@ -336,4 +347,29 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </AlertDialog>
     </Sidebar>
   );
+}
+
+// Ajouter cette animation dans votre fichier CSS global
+const styles = `
+  @keyframes fade-in {
+    0% {
+      opacity: 0;
+      transform: translateY(2px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.2s ease-out forwards;
+  }
+`;
+
+// Ajouter les styles au document
+if (typeof document !== 'undefined') {
+  const styleSheet = document.createElement('style');
+  styleSheet.textContent = styles;
+  document.head.appendChild(styleSheet);
 }

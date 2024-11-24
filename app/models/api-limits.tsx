@@ -13,6 +13,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useAuth } from '@/app/contexts/AuthContext';
 
 interface ApiCallStats {
   api_calls_remaining: number;
@@ -32,33 +33,51 @@ export function ApiLimits() {
   const [error, setError] = useState<string | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [callLogs, setCallLogs] = useState<ApiCallLogs>({ dates: [], call_counts: [] });
+  const { accessToken } = useAuth();
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const accessToken = localStorage.getItem('accessToken');
-        
+        if (!accessToken) {
+          throw new Error("Token d'authentification manquant");
+        }
+
+        const formattedToken = accessToken.startsWith('Bearer ') 
+          ? accessToken 
+          : `Bearer ${accessToken}`;
+
         const [statsResponse, logsResponse] = await Promise.all([
           fetch('https://appai.charlesagostinelli.com/api/apiCall/', {
-            headers: { 'Authorization': `Bearer ${accessToken}` }
+            headers: { 
+              'Authorization': formattedToken,
+              'Content-Type': 'application/json'
+            }
           }),
           fetch('https://appai.charlesagostinelli.com/api/api-call-logs/', {
-            headers: { 'Authorization': `Bearer ${accessToken}` }
+            headers: { 
+              'Authorization': formattedToken,
+              'Content-Type': 'application/json'
+            }
           })
         ]);
+
+        console.log('📊 Status stats:', statsResponse.status);
+        console.log('📊 Status logs:', logsResponse.status);
         
-        if (!statsResponse.ok || !logsResponse.ok) 
+        if (!statsResponse.ok || !logsResponse.ok) {
+          const statsText = await statsResponse.text();
+          const logsText = await logsResponse.text();
+          console.error('Réponse stats:', statsText);
+          console.error('Réponse logs:', logsText);
           throw new Error('Erreur lors de la récupération des données');
+        }
         
         const statsData = await statsResponse.json();
         const logsData = await logsResponse.json();
 
-        const today = new Date().toISOString().split('T')[0];
-        if (!logsData.dates.includes(today)) {
-          logsData.dates.push(today);
-          logsData.call_counts.push(1000 - statsData.api_calls_remaining);
-        }
-        
+        console.log('📊 Données stats:', statsData);
+        console.log('📊 Données logs:', logsData);
+
         setStats(statsData);
         setCallLogs(logsData);
         
@@ -66,15 +85,17 @@ export function ApiLimits() {
           setShowUpgradeModal(true);
         }
       } catch (err) {
+        console.error('Erreur détaillée:', err);
         setError('Impossible de charger les statistiques');
-        console.error(err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchStats();
-  }, []);
+    if (accessToken) {
+      fetchStats();
+    }
+  }, [accessToken]);
 
   if (loading) {
     return (

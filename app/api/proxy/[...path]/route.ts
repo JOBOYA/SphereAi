@@ -17,92 +17,70 @@ export async function POST(
       );
     }
     
-    // Créer un JWT compatible avec Django REST framework JWT
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET_KEY);
-    const now = Math.floor(Date.now() / 1000);
-    const token = await new SignJWT({
-      token_type: "access",
-      exp: now + (60 * 60), // 1 heure
-      orig_iat: now,
-      clerk_id: userId,
-      user_id: userId
-    })
-      .setProtectedHeader({ 
-        alg: 'HS256',
-        typ: 'JWT'
-      })
-      .setExpirationTime('1h')
-      .setIssuedAt()
-      .setNotBefore(now)
-      .sign(secret);
-    
     const body = await request.json();
     const path = params.path.join("/");
     
-    console.log("👤 UserId:", userId);
-    console.log("📍 Chemin API:", path);
-    console.log("📦 Corps de la requête:", body);
+    // Récupérer le token d'autorisation de la requête
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
 
-    // Adapter le corps de la requête selon le endpoint
-    let requestBody;
-    if (path === "register") {
-      requestBody = {
-        email: body.email,
-        clerk_id: userId,
-        first_name: body.first_name || "",
-        last_name: body.last_name || "",
-      };
-    } else if (path === "login") {
-      requestBody = {
-        email: body.email,
-        clerk_id: userId,
-        token_type: "access"
-      };
-    } else {
-      requestBody = {
-        ...body,
-        clerk_id: userId
-      };
+    if (!token) {
+      return NextResponse.json(
+        { error: "Token d'autorisation manquant" },
+        { status: 401 }
+      );
     }
 
     const headers: HeadersInit = {
       "Content-Type": "application/json",
-      "Authorization": `JWT ${token}`, // Utiliser JWT au lieu de Bearer
+      "Authorization": `Bearer ${token}`, // Utiliser le token de la requête
       "Accept": "application/json"
     };
 
     const apiUrl = `${process.env.API_BASE_URL}/${path}/`;
     console.log("🌐 URL API:", apiUrl);
-    console.log("🔑 Token généré:", token);
-    console.log("📤 Corps de la requête final:", requestBody);
+    console.log("🔑 Token utilisé:", token.slice(0, 20) + '...');
+    console.log("📤 Corps de la requête final:", body);
 
     const apiResponse = await fetch(apiUrl, {
       method: "POST",
       headers,
-      body: JSON.stringify(requestBody)
+      body: JSON.stringify(body)
     });
 
-    // Vérifier si la réponse est JSON
-    const contentType = apiResponse.headers.get("content-type");
-    if (!contentType || !contentType.includes("application/json")) {
-      console.error("❌ Réponse non-JSON reçue:", await apiResponse.text());
+    // Ajout de logs pour déboguer
+    console.log("📥 Status API:", apiResponse.status);
+    console.log("📥 Headers API:", Object.fromEntries(apiResponse.headers.entries()));
+    
+    // Récupérer le texte brut de la réponse d'abord
+    const responseText = await apiResponse.text();
+    console.log("📥 Réponse brute:", responseText);
+
+    // Essayer de parser le JSON avec plus de sécurité
+    let data;
+    try {
+      data = responseText ? JSON.parse(responseText) : null;
+    } catch (parseError) {
+      console.error("❌ Erreur parsing JSON:", parseError);
+      console.error("❌ Contenu reçu:", responseText);
       return NextResponse.json(
-        { error: "Format de réponse invalide" },
+        { 
+          error: "Impossible de parser la réponse",
+          rawResponse: responseText.slice(0, 500) // Limiter la taille pour le log
+        },
         { status: 500 }
       );
     }
-
-    const data = await apiResponse.json();
 
     if (!apiResponse.ok) {
       console.error("❌ Erreur API:", {
         status: apiResponse.status,
         path: path,
         data: data,
-        requestBody: requestBody,
+        requestBody: body,
         headers: {
           ...headers,
-          "Authorization": "JWT [MASKED]"
+          "Authorization": "Bearer [MASKED]"
         }
       });
       return NextResponse.json(data, { status: apiResponse.status });

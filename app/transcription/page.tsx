@@ -36,8 +36,17 @@ export default function TranscriptionPage() {
       const formData = new FormData();
       formData.append('audio', blob);
 
+      const accessToken = localStorage.getItem('accessToken');
+      
+      if (!accessToken) {
+        throw new Error('Token d\'accès non disponible');
+      }
+
       const response = await fetch('/api/transcription', {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
         body: formData,
       });
 

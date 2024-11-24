@@ -2,55 +2,41 @@
 
 import { useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
-import { authService } from '@/app/services/auth';
-import { SidebarTrigger } from '@/components/ui/sidebar';
+import { AIChat } from "@/app/models/ai-chat";
 import { AppSidebar } from '@/components/app-sidebar';
 import { SidebarProvider } from '@/components/ui/sidebar';
-import { AIChat } from "@/app/models/ai-chat";
+import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useAuth } from '@/app/contexts/AuthContext';
+import { authService } from '@/app/services/auth';
 
 export default function DashboardPage() {
   const { user, isLoaded } = useUser();
   const { setAccessToken } = useAuth();
 
   useEffect(() => {
-    const handleAfterSignIn = async () => {
-      if (!user?.primaryEmailAddress?.emailAddress) {
-        console.log('⚠️ Pas d\'email disponible dans user');
-        return;
-      }
-
-      console.log('👤 Utilisateur détecté:', user.primaryEmailAddress.emailAddress);
+    const initializeAuth = async () => {
+      if (!user?.primaryEmailAddress?.emailAddress) return;
 
       try {
         const userData = {
           email: user.primaryEmailAddress.emailAddress,
-          password: user.id,
+          clerk_id: user.id
         };
 
-        console.log('🔄 Préparation de l\'appel API avec:', userData);
+        console.log('🔄 Initialisation auth dashboard...');
         const response = await authService.login(userData);
 
         if (response.tokens?.access) {
+          console.log('✅ Token obtenu dans dashboard');
           setAccessToken(response.tokens.access);
-          console.log('🔑 Token d\'accès stocké');
         }
-
-        console.log('✅ Réponse complète:', {
-          message: response.message,
-          data: response,
-        });
-      } catch (error: any) {
-        console.error('💥 Erreur détaillée:', {
-          message: error.message,
-          error: error
-        });
+      } catch (error) {
+        console.error('❌ Erreur initialisation auth:', error);
       }
     };
 
     if (isLoaded && user) {
-      console.log('🚀 Démarrage handleAfterSignIn');
-      handleAfterSignIn();
+      initializeAuth();
     }
   }, [user, isLoaded, setAccessToken]);
 

@@ -7,7 +7,7 @@ import { useAuth } from '@/app/contexts/AuthContext';
 import { useUser } from '@clerk/nextjs';
 import { useRouter, usePathname } from 'next/navigation';
 import { Message, PreviewState, Conversation } from '@/app/types/chat';
-import { sendMessage } from '@/app/services/chat-service';
+import { chatService } from '@/app/services/chat-service';
 import { ChatHeader } from '@/components/chat/ChatHeader';
 import { ChatForm } from '@/components/chat/ChatForm';
 import { PreviewPanel } from '@/components/chat/PreviewPanel';
@@ -46,6 +46,8 @@ export function AIChat() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [extractedPdfText, setExtractedPdfText] = useState<string | null>(null);
   const [abortController, setAbortController] = useState<AbortController | null>(null);
+  const [isAddingToHistory, setIsAddingToHistory] = useState(false);
+  const sidebarRef = useRef<{ updateConversations: (id: string) => Promise<void> }>();
 
   useEffect(() => {
     console.log('🔑 Token dans AIChat:', accessToken ? 'Présent' : 'Absent');
@@ -69,6 +71,12 @@ export function AIChat() {
       const newConversationId = generateConversationId();
       setConversationId(newConversationId);
       router.push(`/chat/${newConversationId}`);
+      
+      const sidebarRef = (window as any).sidebarRef;
+      if (sidebarRef?.updateConversations) {
+        console.log('🔄 Mise à jour de l\'historique avec le nouvel ID:', newConversationId);
+        sidebarRef.updateConversations(newConversationId);
+      }
     }
   }, [pathname]);
 
@@ -86,12 +94,38 @@ export function AIChat() {
     }
   };
 
+  const updateConversationHistory = async (newMessage: Message, aiResponse: any) => {
+    setIsAddingToHistory(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      if (accessToken) {
+        const formattedToken = accessToken.startsWith('Bearer ') 
+          ? accessToken 
+          : `Bearer ${accessToken}`;
+
+        await chatService.fetchConversations(formattedToken);
+      }
+    } finally {
+      setIsAddingToHistory(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputMessage.trim() || isLoading) return;
 
     const controller = new AbortController();
     setAbortController(controller);
+
+    if (!accessToken) {
+      setError('Veuillez vous connecter pour utiliser le chat');
+      return;
+    }
+
+    const formattedToken = accessToken.startsWith('Bearer ') 
+      ? accessToken 
+      : `Bearer ${accessToken}`;
 
     const newMessage: Message = {
       id: Date.now().toString(),
@@ -114,24 +148,16 @@ export function AIChat() {
     setMessages(prevMessages => [...prevMessages, tempAiMessage]);
 
     try {
-      const accessToken = localStorage.getItem('accessToken');
-      if (!accessToken) {
-        setError('Veuillez vous connecter pour utiliser le chat');
-        return;
-      }
-
-      const response = await sendMessage(inputMessage, conversationId, accessToken);
+      const response = await chatService.sendMessage({
+        message: inputMessage,
+        conversation_id: conversationId,
+        accessToken: formattedToken
+      });
 
       if (response.error) {
         switch (response.error) {
-          case 'model_loading':
-            setError(`Le modèle se charge, veuillez patienter environ ${Math.ceil(response.estimated_time || 0 * 20)} secondes`);
-            break;
-          case 'api_limit_reached':
-            setShowUpgradeModal(true);
-            setError('Limite d\'appels API atteinte');
-            break;
           case 'unauthorized':
+            router.push('/login');
             setError('Session expirée, veuillez vous reconnecter');
             break;
           default:
@@ -143,59 +169,32 @@ export function AIChat() {
       if (response && response.api_response) {
         setLoadingPhase('typing');
         
-        const finalText = response.api_response;
-        const totalChunks = Math.ceil(finalText.length / chunkSize);
-        let currentChunk = 0;
+        setMessages(prevMessages => 
+          prevMessages.map(msg => 
+            msg.id === tempAiMessage.id 
+              ? { ...msg, content: response.api_response }
+              : msg
+          )
+        );
 
-        const updateText = () => {
-          if (currentChunk < totalChunks) {
-            const start = currentChunk * chunkSize;
-            const end = Math.min(start + chunkSize, finalText.length);
-            const text = finalText.slice(0, end);
-            
-            setMessages(prevMessages => 
-              prevMessages.map(msg => 
-                msg.id === tempAiMessage.id 
-                  ? { ...msg, content: text }
-                  : msg
-              )
-            );
-            
-            currentChunk++;
-            if (currentChunk < totalChunks) {
-              requestAnimationFrame(updateText);
-            } else {
-              setLoadingPhase(null);
-            }
-          }
-        };
+        const sidebarRef = (window as any).sidebarRef;
+        if (sidebarRef?.updateConversations) {
+          console.log('🔄 Mise à jour de l\'historique après réponse');
+          await sidebarRef.updateConversations(conversationId);
+        }
 
-        requestAnimationFrame(updateText);
-        
         if (response.api_calls_remaining) {
           setApiCallsRemaining(response.api_calls_remaining);
         }
       }
     } catch (error: any) {
-      if (error.name === 'AbortError') {
-        setMessages(prevMessages => 
-          prevMessages.map(msg => 
-            msg.id === tempAiMessage.id 
-              ? { ...msg, content: "[Génération arrêtée]" }
-              : msg
-          )
-        );
+      console.error('Erreur dans handleSubmit:', error);
+      if (error.message === 'unauthorized') {
+        localStorage.removeItem('accessToken');
+        router.push('/login');
+        setError('Session expirée, veuillez vous reconnecter');
       } else {
-        console.error('Erreur dans handleSubmit:', error);
         setError('Une erreur est survenue lors de l\'envoi du message');
-        
-        setMessages(prevMessages => 
-          prevMessages.map(msg => 
-            msg.id === tempAiMessage.id 
-              ? { ...msg, content: "Désolé, une erreur est survenue lors de l'envoi du message." }
-              : msg
-          )
-        );
       }
     } finally {
       setIsLoading(false);
@@ -298,36 +297,24 @@ export function AIChat() {
     }
   };
 
-
-  const fetchUserConversations = async () => {
+  const loadConversations = async () => {
     try {
-      const accessToken = localStorage.getItem('accessToken');
-      
-      if (!accessToken) {
-        console.error('Token non disponible');
-        return;
-      }
+      if (!accessToken) return;
 
-      const response = await fetch('https://appai.charlesagostinelli.com/api/user-conversations/', {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`
-        }
-      });
+      const formattedToken = accessToken.startsWith('Bearer ') 
+        ? accessToken 
+        : `Bearer ${accessToken}`;
 
-      if (!response.ok) {
-        throw new Error('Erreur lors de la récupération des conversations');
-      }
-
-      const data = await response.json();
-      setConversations(data);
+      const conversations = await chatService.fetchConversations(formattedToken);
+      setConversations(conversations);
 
       if (conversationId) {
-        const currentConversation = data.find(
-          (conv: any) => conv.conversation_id === conversationId
+        const currentConv = conversations.find(
+          conv => conv.conversation_id === conversationId
         );
         
-        if (currentConversation) {
-          const formattedMessages = currentConversation.messages.map((msg: any) => ({
+        if (currentConv) {
+          const formattedMessages = currentConv.messages.map(msg => ({
             id: Date.now().toString() + Math.random(),
             content: msg.content,
             role: msg.is_user_message ? 'user' : 'assistant',
@@ -338,15 +325,15 @@ export function AIChat() {
         }
       }
     } catch (error) {
-      console.error('Erreur lors de la récupération des conversations:', error);
+      console.error('Erreur chargement conversations:', error);
     }
   };
 
   useEffect(() => {
-    if (user) {
-      fetchUserConversations();
+    if (accessToken) {
+      loadConversations();
     }
-  }, [user, conversationId]);
+  }, [accessToken, conversationId]);
 
   const fetchConversationMessages = async (convId: string) => {
     try {
@@ -426,13 +413,20 @@ export function AIChat() {
       setIsLoading(true);
       setLoadingPhase('dots');
 
-      const accessToken = localStorage.getItem('accessToken');
       if (!accessToken) {
         setError('Veuillez vous connecter pour utiliser le chat');
         return;
       }
 
-      const response = await sendMessage(prompt, conversationId, accessToken);
+      const formattedToken = accessToken.startsWith('Bearer ') 
+        ? accessToken 
+        : `Bearer ${accessToken}`;
+
+      const response = await chatService.sendMessage({
+        message: prompt,
+        conversation_id: conversationId,
+        accessToken: formattedToken
+      });
       
       if (response.error) {
         throw new Error(response.error);
@@ -484,6 +478,15 @@ export function AIChat() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputMessage(e.target.value);
   };
+
+  useEffect(() => {
+    const token = localStorage.getItem('accessToken');
+    console.log('Token au chargement:', token);
+    
+    if (!token) {
+      router.push('/login');
+    }
+  }, []);
 
   return (
     <Theme appearance="light" accentColor="blue" radius="large">

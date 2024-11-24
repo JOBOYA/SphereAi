@@ -4,20 +4,20 @@ export default authMiddleware({
     publicRoutes: [
         "/",  
         "/api/auth/getToken",
-        "/sign-in",
-        "/sign-up"   
+        "/login",
+        "/register",
+        "/dashboard"
     ],
     afterAuth(auth, req, evt) {
-        // Obtenir le chemin de l'URL
         const path = new URL(req.url).pathname;
 
-        // Si l'utilisateur n'est pas connecté et essaie d'accéder à /dashboard
-        if (!auth.userId && path.startsWith('/dashboard')) {
-            return Response.redirect(new URL('/sign-in', req.url));
+        // Si l'utilisateur n'est pas connecté et essaie d'accéder à une route protégée
+        if (!auth.userId && !path.startsWith('/login') && !path.startsWith('/register') && !path.startsWith('/')) {
+            return Response.redirect(new URL('/login', req.url));
         }
 
-        // Si l'utilisateur est connecté et essaie d'accéder aux pages de connexion
-        if (auth.userId && (path.startsWith('/sign-in') || path.startsWith('/sign-up'))) {
+        // Si l'utilisateur est connecté et sur une page d'authentification
+        if (auth.userId && (path.startsWith('/login') || path.startsWith('/register'))) {
             return Response.redirect(new URL('/dashboard', req.url));
         }
     }
