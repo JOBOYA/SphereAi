@@ -100,14 +100,7 @@ export const transcriptionService = {
           'Authorization': formattedToken
         },
         body: JSON.stringify({
-          message: `Vous êtes un assistant spécialisé dans l'analyse de réunions professionnelles. 
-          Concentrez-vous uniquement sur les informations pertinentes liées au travail : tâches, décisions, deadlines, responsabilités et points d'action. 
-          Ignorez les conversations personnelles ou hors-sujet.
-          
-          Analysez cette transcription de réunion et fournissez une synthèse structurée des points importants. 
-          Si la conversation ne contient pas d'éléments professionnels pertinents, indiquez simplement "Cette conversation ne contient pas d'éléments professionnels à synthétiser."
-          
-          Transcription : ${transcript}`,
+          message: `[Transcription] ${transcript}\n\nVous êtes un assistant spécialisé dans l'analyse de réunions professionnelles...`,
           conversation_id: Date.now().toString()
         })
       });

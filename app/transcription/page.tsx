@@ -62,6 +62,14 @@ export default function TranscriptionPage() {
       const data = await response.json();
       setTranscription(data.transcription);
       setAnalysis(data.analysis);
+
+      // Mettre à jour l'historique avec l'effet de typing
+      const sidebarRef = (window as any).sidebarRef;
+      if (sidebarRef?.updateConversations && data.conversation_id) {
+        console.log('🔄 Mise à jour de l\'historique avec la nouvelle transcription');
+        await sidebarRef.updateConversations(data.conversation_id);
+      }
+
     } catch (error) {
       console.error('Erreur:', error);
     } finally {
