@@ -12,7 +12,7 @@ import { ChatHeader } from '@/components/chat/ChatHeader';
 import { ChatForm } from '@/components/chat/ChatForm';
 import { PreviewPanel } from '@/components/chat/PreviewPanel';
 import { ChatMessages } from '@/components/chat/ChatMessages';
-import { pdfjs } from 'react-pdf';
+import * as pdfjsLib from 'pdfjs-dist';
 
 const typingSpeed = 0.1;
 const chunkSize = 25;
@@ -271,17 +271,13 @@ export function AIChat() {
 
   const extractTextFromPDF = async (file: File): Promise<string> => {
     try {
-      // Créer un URL pour le fichier
       const fileUrl = URL.createObjectURL(file);
       
-      // Charger le worker PDF.js
-      pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
       
-      // Charger le document PDF
-      const pdf = await pdfjs.getDocument(fileUrl).promise;
+      const pdf = await pdfjsLib.getDocument(fileUrl).promise;
       let fullText = '';
       
-      // Extraire le texte de chaque page
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
@@ -291,7 +287,6 @@ export function AIChat() {
         fullText += pageText + '\n';
       }
       
-      // Nettoyer l'URL créé
       URL.revokeObjectURL(fileUrl);
       
       return fullText;
@@ -325,7 +320,7 @@ export function AIChat() {
             timestamp: new Date(msg.timestamp)
           }));
           
-          setMessages(formattedMessages);
+          setMessages(formattedMessages as Message[]);
         }
       }
     } catch (error) {
