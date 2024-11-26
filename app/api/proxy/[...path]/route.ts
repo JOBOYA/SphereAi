@@ -132,8 +132,10 @@ export async function GET(
   try {
     const { userId, getToken } = auth();
     console.log("GET - Auth info:", { userId });
+    console.log("GET - Path:", params.path);
     
     if (!userId) {
+      console.log("GET - Pas d'userId");
       return NextResponse.json(
         { error: "Authentification requise" },
         { status: 401 }
@@ -141,12 +143,7 @@ export async function GET(
     }
 
     const token = await getToken();
-    if (!token) {
-      return NextResponse.json(
-        { error: "Token non disponible" },
-        { status: 401 }
-      );
-    }
+    console.log("GET - Token obtenu:", token ? "Oui" : "Non");
 
     const path = params.path.join("/");
     const apiUrl = `${process.env.API_BASE_URL}/${path}/`.replace(/\/+/g, '/');
@@ -160,14 +157,20 @@ export async function GET(
       "X-User-ID": userId
     };
 
+    console.log("GET - Headers envoyés:", {
+      ...headers,
+      Authorization: "Bearer [MASQUÉ]"
+    });
+
     const apiResponse = await fetch(apiUrl, {
       method: "GET",
       headers
     });
 
-    console.log("GET - Réponse:", {
+    console.log("GET - Réponse API:", {
       status: apiResponse.status,
-      url: apiResponse.url
+      url: apiResponse.url,
+      headers: Object.fromEntries(apiResponse.headers.entries())
     });
 
     const contentType = apiResponse.headers.get('content-type');

@@ -9,7 +9,7 @@ export default authMiddleware({
         "/dashboard",
         "/api/proxy",
         "/api/proxy/login",
-        "/api/user-conversations",
+        "/api/proxy/user-conversations",
         "/api/chat",
         "/api/transcription"
     ],
