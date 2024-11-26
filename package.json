@@ -39,6 +39,7 @@
     "@types/react-syntax-highlighter": "^15.5.11",
     "@types/ws": "^8.5.13",
     "@wavesurfer/react": "^1.0.7",
+    "ai": "^4.0.6",
     "autoprefixer": "^10.4.16",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
