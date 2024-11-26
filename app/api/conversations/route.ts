@@ -1,6 +1,7 @@
-export async function fetchConversations() {
+import { NextResponse } from 'next/server';
+
+export async function GET() {
   try {
-    // Au lieu de faire l'appel direct à l'API Django
     const response = await fetch('/api/proxy/user-conversations', {
       method: 'GET',
       headers: {
@@ -8,13 +9,13 @@ export async function fetchConversations() {
       }
     });
 
-    if (!response.ok) {
-      throw new Error(`Erreur lors de la récupération des conversations: ${response.status}`);
-    }
-
-    return await response.json();
+    const data = await response.json();
+    return NextResponse.json(data);
   } catch (error) {
-    console.error('🚨 Erreur récupération conversations:', error);
-    throw error;
+    console.error('🚨 Erreur route conversations:', error);
+    return NextResponse.json(
+      { error: "Erreur lors de la récupération des conversations" },
+      { status: 500 }
+    );
   }
 } 
