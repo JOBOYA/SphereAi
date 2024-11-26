@@ -6,7 +6,8 @@ export default authMiddleware({
         "/api/auth/getToken",
         "/login",
         "/register",
-        "/dashboard"
+        "/dashboard",
+        "/api/proxy"
     ],
     afterAuth(auth, req, evt) {
         const path = new URL(req.url).pathname;
@@ -31,6 +32,7 @@ export const config = {
         '/api/chat',
         '/api/user-conversations',
         '/transcription',
-        '/api/transcription'
+        '/api/transcription',
+        '/api/proxy'
     ],
 };
