@@ -51,13 +51,10 @@ export async function POST(
     };
 
     if (!isLoginRequest) {
-      const token = await getToken({
-        template: "default"
-      });
-      
+      const token = await getToken();
       if (!token) {
         return NextResponse.json(
-          { error: "Token d'authentification non disponible" },
+          { error: "Token non disponible" },
           { status: 401 }
         );
       }
