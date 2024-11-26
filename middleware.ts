@@ -11,7 +11,10 @@ export default authMiddleware({
         "/api/proxy/login",
         "/api/proxy/user-conversations",
         "/api/chat",
-        "/api/transcription"
+        "/api/transcription",
+        "/api/*",
+        "/sign-in",
+        "/sign-up"
     ],
     afterAuth(auth, req, evt) {
         const path = new URL(req.url).pathname;

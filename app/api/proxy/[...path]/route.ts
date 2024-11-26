@@ -7,13 +7,19 @@ export async function POST(
 ) {
   try {
     const { userId, getToken } = auth();
+    console.log(" Début de la requête proxy");
     console.log("Auth info:", { userId });
     console.log("API_BASE_URL:", process.env.API_BASE_URL);
     
     const token = await getToken();
-    console.log("Token obtenu:", token ? "Oui" : "Non");
+    console.log("Token:", {
+        exists: !!token,
+        userId: userId,
+        url: process.env.API_BASE_URL
+    });
     
     if (!userId) {
+      console.log("❌ Pas d'userId");
       return NextResponse.json(
         { error: "Authentification requise" },
         { status: 401 }
@@ -45,7 +51,10 @@ export async function POST(
     };
 
     if (!isLoginRequest) {
-      const token = await getToken();
+      const token = await getToken({
+        template: "default"
+      });
+      
       if (!token) {
         return NextResponse.json(
           { error: "Token d'authentification non disponible" },
