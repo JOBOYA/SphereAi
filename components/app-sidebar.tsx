@@ -13,6 +13,7 @@ import {
   User,
   Trash2,
   Mic,
+  Network,
 } from "lucide-react";
 
 import { NavMain } from "@/components/nav-main";
@@ -61,6 +62,11 @@ const data = {
           title: "Voice",
           url: "/transcription",
           icon: Mic,
+        },
+        {
+          title: "Mindmap",
+          url: "/mindmap",
+          icon: Network,
         }
       ],
     },
@@ -247,9 +253,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const handleConversationClick = (e: React.MouseEvent, conv: Conversation) => {
     e.preventDefault();
     
-    // Rediriger vers la page appropriée selon le type de conversation
+    // Vérifier le type de conversation
     if (conv.messages[0]?.content.includes('[Transcription]')) {
       router.push(`/transcription/${conv.conversation_id}`);
+    } else if (conv.messages[0]?.content.includes('[Mindmap]')) {
+      router.push(`/mindmap/${conv.conversation_id}`);
     } else {
       router.push(`/chat/${conv.conversation_id}`);
     }
@@ -269,8 +277,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             {conversations.map((conv) => {
               const firstMessage = conv.messages[0]?.content || 'Nouvelle conversation';
               const isTranscription = firstMessage.includes('[Transcription]');
+              const isMindmap = firstMessage.includes('[Mindmap]');
               const shortTitle = isTranscription 
                 ? 'Transcription vocale'
+                : isMindmap
+                ? 'Mindmap: ' + firstMessage.replace('[Mindmap]', '').slice(0, 30)
                 : firstMessage.slice(0, 30) + (firstMessage.length > 30 ? '...' : '');
               const isTyping = typingConversation === conv.conversation_id;
               
@@ -285,11 +296,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     className={cn(
                       "flex items-center gap-3 rounded-lg px-3 py-2 text-gray-500 transition-all hover:text-gray-900 text-sm pr-10",
                       pathname === `/chat/${conv.conversation_id}` && "bg-gray-100 text-gray-900",
-                      pathname === `/transcription/${conv.conversation_id}` && "bg-gray-100 text-gray-900"
+                      pathname === `/transcription/${conv.conversation_id}` && "bg-gray-100 text-gray-900",
+                      pathname === `/mindmap/${conv.conversation_id}` && "bg-gray-100 text-gray-900"
                     )}
                   >
                     {isTranscription ? (
                       <Mic className="h-4 w-4" />
+                    ) : isMindmap ? (
+                      <Network className="h-4 w-4" />
                     ) : (
                       <MessageSquare className="h-4 w-4" />
                     )}

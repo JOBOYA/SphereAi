@@ -148,3 +148,23 @@
     scrollbar-width: none;
   }
 }
+
+.bg-dot-pattern {
+  background-color: #f8fafc;
+  background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+@layer utilities {
+  .container {
+    @apply mx-auto px-4;
+  }
+}
+
+.react-flow__controls {
+  @apply !bg-white !shadow-lg !rounded-lg !border-none;
+}
+
+.react-flow__controls button {
+  @apply !bg-white hover:!bg-gray-50 !border-gray-200;
+}
