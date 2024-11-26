@@ -129,8 +129,69 @@ export async function GET(
   request: NextRequest, 
   { params }: { params: { path: string[] } }
 ) {
-  return NextResponse.json(
-    { error: "Méthode non supportée" }, 
-    { status: 405 }
-  );
+  try {
+    const { userId, getToken } = auth();
+    console.log("GET - Auth info:", { userId });
+    
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Authentification requise" },
+        { status: 401 }
+      );
+    }
+
+    const token = await getToken();
+    if (!token) {
+      return NextResponse.json(
+        { error: "Token non disponible" },
+        { status: 401 }
+      );
+    }
+
+    const path = params.path.join("/");
+    const apiUrl = `${process.env.API_BASE_URL}/${path}/`.replace(/\/+/g, '/');
+
+    console.log("GET - URL finale:", apiUrl);
+
+    const headers = {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+      "Accept": "application/json",
+      "X-User-ID": userId
+    };
+
+    const apiResponse = await fetch(apiUrl, {
+      method: "GET",
+      headers
+    });
+
+    console.log("GET - Réponse:", {
+      status: apiResponse.status,
+      url: apiResponse.url
+    });
+
+    const contentType = apiResponse.headers.get('content-type');
+    let responseData;
+
+    if (contentType?.includes('application/json')) {
+      responseData = await apiResponse.json();
+    } else {
+      const text = await apiResponse.text();
+      responseData = { data: text };
+    }
+
+    if (!apiResponse.ok) {
+      console.error(`GET - Erreur API (${apiResponse.status}):`, responseData);
+      return NextResponse.json(responseData, { status: apiResponse.status });
+    }
+
+    return NextResponse.json(responseData);
+
+  } catch (error) {
+    console.error("GET - Erreur:", error);
+    return NextResponse.json(
+      { error: "Erreur serveur" },
+      { status: 500 }
+    );
+  }
 }
