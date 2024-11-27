@@ -2,55 +2,41 @@ import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
   try {
-    const { prompt } = await request.json()
-    const authHeader = request.headers.get('Authorization')
+    const { topic } = await request.json()
 
-    if (!authHeader) {
-      return NextResponse.json(
-        { error: "Token d'authentification manquant" },
-        { status: 401 }
-      )
-    }
+    const prompt = `Génère une mindmap sur le sujet "${topic}". 
+    Format attendu: une liste hiérarchique avec des tirets (-) pour le premier niveau et des astérisques (*) pour le second niveau.
+    Exemple:
+    - Concept principal 1
+    * Sous-concept 1.1
+    * Sous-concept 1.2
+    - Concept principal 2
+    * Sous-concept 2.1
+    * Sous-concept 2.2
+    Ne pas inclure d'introduction ni de conclusion, uniquement la structure de la mindmap.`
 
-    const response = await fetch('https://appai.charlesagostinelli.com/api/chatMistral/', {
+    const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': `Bearer ${process.env.MISTRAL_API_KEY}`
       },
       body: JSON.stringify({
-        message: prompt,
-        conversation_id: Date.now().toString(),
-        type: 'mindmap',
-        max_tokens: 1000
+        model: 'mistral-tiny',
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 500,
+        temperature: 0.7
       })
     })
 
-    if (!response.ok) {
-      if (response.status === 503) {
-        const data = await response.json()
-        const estimatedTime = Math.ceil(data.estimated_time || 20)
-        return NextResponse.json(
-          { error: `Le modèle se charge, veuillez patienter environ ${estimatedTime} secondes` },
-          { status: 503 }
-        )
-      }
-
-      const errorData = await response.json()
-      return NextResponse.json(
-        { error: errorData.error || `Erreur API: ${response.status}` },
-        { status: response.status }
-      )
-    }
-
     const data = await response.json()
-    return NextResponse.json(data)
-    
+    return NextResponse.json({
+      content: data.choices[0].message.content,
+      status: 'success'
+    })
+
   } catch (error) {
-    console.error('Erreur:', error)
-    return NextResponse.json(
-      { error: `Erreur API: ${error instanceof Error ? error.message : '500'}` },
-      { status: 500 }
-    )
+    console.error('Error:', error)
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 } 

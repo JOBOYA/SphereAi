@@ -8,18 +8,32 @@ export interface MindmapData {
   }[];
 }
 
-export interface Node extends ReactFlowNode {
+export type Node = {
+  id: string;
+  type: string;
+  position: {
+    x: number;
+    y: number;
+  };
   data: {
     label: string;
-    type?: 'central' | 'main' | 'sub';
+    type?: 'main' | 'sub' | 'leaf';
   };
-  style?: React.CSSProperties;
-}
+} & Omit<ReactFlowNode, 'id' | 'type' | 'position' | 'data'>;
 
 export type Edge = ReactFlowEdge & {
-  className?: string;
   animated?: boolean;
-  type?: 'main' | 'sub' | 'smoothstep' | undefined;
-};
+}
+
+export interface Concept {
+  id: string;
+  label: string;
+  level: number;
+}
+
+export interface Connection {
+  source: number;
+  target: number;
+}
 
 export type BackgroundVariant = 'dots' | 'lines' | 'cross' | undefined; 

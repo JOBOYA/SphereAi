@@ -7,6 +7,8 @@ import { Card } from '@/components/ui/card'
 import { useAuth } from '@/app/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import { ReactFlowProvider } from 'reactflow'
+import { Loader2, Sparkles } from 'lucide-react'
+import { motion } from 'framer-motion'
 import 'reactflow/dist/style.css'
 import { mindmapService } from '@/app/services/mindmap-service'
 import { Node, Edge } from '@/app/types/mindmap'
@@ -43,62 +45,98 @@ export default function MindmapPage() {
   }
 
   return (
-    <div className="container py-8 px-4 max-w-4xl mx-auto">
-      <div className="flex flex-col space-y-6">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">AI Mindmap Creator</h1>
-          <p className="text-gray-600">Créez facilement des cartes mentales avec l'aide de l'IA</p>
-        </div>
-
-        <Card className="p-6 shadow-lg">
-          <div className="flex flex-col md:flex-row gap-4">
-            <Input
-              placeholder="Sur quel sujet voulez-vous créer une mindmap ?"
-              value={topic}
-              onChange={(e) => setTopic(e.target.value)}
-              className="flex-1"
-            />
-            
-            <Button 
-              onClick={handleGenerateMindmap}
-              disabled={loading || !topic}
-              className="md:w-auto"
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50/50 via-white to-purple-50/50">
+      <div className="container py-8 px-4 max-w-6xl mx-auto">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col space-y-10"
+        >
+          {/* En-tête */}
+          <div className="text-center space-y-4">
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
             >
-              {loading ? (
-                <>
-                  <span className="animate-spin mr-2">⚪</span>
-                  Génération...
-                </>
-              ) : (
-                'Générer'
-              )}
-            </Button>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                AI Mindmap Creator
+              </h1>
+              <p className="mt-4 text-slate-600 text-lg max-w-2xl mx-auto leading-relaxed">
+                Donnez vie à vos idées avec des cartes mentales élégantes
+              </p>
+            </motion.div>
           </div>
-        </Card>
 
-        {error && (
-          <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600 flex items-center">
-            <svg className="w-5 h-5 mr-2 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-            {error}
-          </div>
-        )}
-
-        {loading && (
-          <Card className="p-8 text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-t-blue-500 border-blue-200 mb-4"></div>
-            <p className="text-gray-600">Génération de votre mindmap en cours...</p>
+          {/* Zone de saisie */}
+          <Card className="p-6 bg-white/80 backdrop-blur-sm border-0 shadow-lg rounded-2xl">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1 relative">
+                <Input
+                  placeholder="Décrivez votre sujet avec précision..."
+                  value={topic}
+                  onChange={(e) => setTopic(e.target.value)}
+                  className="h-12 pl-4 bg-white border-slate-200 text-slate-800 placeholder:text-slate-400 rounded-xl focus:ring-2 focus:ring-indigo-200 transition-all"
+                />
+              </div>
+              
+              <Button 
+                onClick={handleGenerateMindmap}
+                disabled={loading || !topic}
+                className="h-12 px-8 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl transition-all duration-300 shadow-md hover:shadow-lg disabled:opacity-70"
+              >
+                {loading ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Création...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4" />
+                    <span>Générer</span>
+                  </div>
+                )}
+              </Button>
+            </div>
           </Card>
-        )}
 
-        {(nodes.length > 0 || edges.length > 0) && (
-          <Card className="p-0 overflow-hidden" style={{ height: '70vh' }}>
-            <ReactFlowProvider>
-              <Mindmap nodes={nodes} edges={edges} />
-            </ReactFlowProvider>
-          </Card>
-        )}
+          {/* Message d'erreur */}
+          {error && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="rounded-xl bg-red-50 border border-red-100 p-4 text-red-600"
+            >
+              {error}
+            </motion.div>
+          )}
+
+          {/* ��tat de chargement */}
+          {loading && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="relative"
+            >
+              <Card className="p-10 text-center bg-white/80 backdrop-blur-sm border-0 shadow-lg rounded-2xl">
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 to-purple-500/5 rounded-2xl" />
+                <Loader2 className="h-8 w-8 animate-spin mx-auto text-indigo-500 mb-4" />
+                <p className="text-slate-600 font-medium">Création de votre mindmap en cours...</p>
+                <p className="text-slate-500 text-sm mt-2">Nous analysons votre sujet avec soin</p>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Affichage de la Mindmap */}
+          {(nodes.length > 0 || edges.length > 0) && (
+            <Card className="overflow-hidden bg-white/80 backdrop-blur-sm border-0 shadow-lg rounded-2xl" 
+                  style={{ height: '70vh' }}>
+              <ReactFlowProvider>
+                <Mindmap initialNodes={nodes} initialEdges={edges} />
+              </ReactFlowProvider>
+            </Card>
+          )}
+        </motion.div>
       </div>
     </div>
   )
