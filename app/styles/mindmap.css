@@ -1,0 +1,78 @@
+.react-flow__node {
+  min-width: 180px;
+  max-width: 250px;
+  border-radius: 12px;
+  padding: 8px !important;
+}
+
+.central-node {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white !important;
+  border: none !important;
+  font-weight: bold;
+  box-shadow: 0 4px 6px -1px rgb(59 130 246 / 0.3);
+}
+
+.main-concept-node {
+  background: white;
+  border: 2px solid #3b82f6 !important;
+  color: #1e40af !important;
+  box-shadow: 0 2px 4px -1px rgb(59 130 246 / 0.1);
+}
+
+.sub-concept-node {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0 !important;
+  font-size: 0.9em;
+  color: #334155 !important;
+}
+
+.react-flow__edge-path {
+  stroke: #3b82f6;
+  stroke-width: 1.5;
+}
+
+.react-flow__edge.animated path {
+  stroke-dasharray: 5,5;
+  animation: dashdraw 1.5s linear infinite;
+}
+
+@keyframes dashdraw {
+  from {
+    stroke-dashoffset: 10;
+  }
+}
+
+.react-flow__handle {
+  width: 6px;
+  height: 6px;
+  background: #3b82f6;
+  border: 2px solid white;
+}
+
+.react-flow__handle:hover {
+  background: #1d4ed8;
+}
+
+/* Ajout d'un fond plus agréable */
+.react-flow__background {
+  background-color: #f8fafc;
+}
+
+/* Style des contrôles */
+.react-flow__controls {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.react-flow__controls-button {
+  border: none !important;
+  color: #64748b !important;
+}
+
+/* Animation au survol des nœuds */
+.react-flow__node:hover {
+  transform: translateY(-2px);
+  transition: all 0.2s ease;
+} 

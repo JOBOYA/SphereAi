@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { checkAndRefreshToken } from '../services/auth';
 
 interface AuthContextType {
   accessToken: string | null;
@@ -18,6 +19,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     return null;
   });
+
+  useEffect(() => {
+    const initToken = async () => {
+      const token = await checkAndRefreshToken();
+      setAccessToken(token);
+    };
+
+    initToken();
+  }, []);
 
   useEffect(() => {
     console.log('🔐 État du token d\'accès:', accessToken ? 'Présent' : 'Absent');
