@@ -17,6 +17,7 @@ import {
   ChevronDown,
   History,
 } from "lucide-react";
+import { SketchLogo } from "@phosphor-icons/react";
 
 import { NavMain } from "@/components/nav-main";
 import { NavProjects } from "@/components/nav-projects";
@@ -45,7 +46,7 @@ import { chatService } from '@/app/services/chat-service';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { useState, useRef, useEffect } from 'react';
 
-// Sample data
+// Ensuite le reste du code avec data et les autres définitions
 const data = {
   navMain: [
     {
@@ -85,6 +86,13 @@ const data = {
           url: "#",
           icon: Settings,
           description: "Paramètres généraux",
+        },
+        {
+          title: "Upgrade Plan",
+          url: "/dashboard/upgrade",
+          icon: SketchLogo,
+          description: "Passez à la version Pro",
+          isPro: true,
         },
         {
           title: "Team",
@@ -350,38 +358,51 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       "group relative flex flex-col py-2 px-3 rounded-lg ml-4",
                       "hover:bg-gray-50/80 hover:backdrop-blur-sm",
                       "z-10",
-                      isItemActive(item) ? `bg-${section.color}-50 shadow-sm` : "transparent",
+                      item.isPro 
+                        ? "bg-gradient-to-r from-purple-50 to-blue-50 border-purple-100/50" 
+                        : isItemActive(item) ? `bg-${section.color}-50 shadow-sm` : "transparent",
                       "border border-transparent",
-                      isItemActive(item) ? `border-${section.color}-100` : "hover:border-gray-200"
+                      item.isPro 
+                        ? "hover:border-purple-200/50" 
+                        : isItemActive(item) ? `border-${section.color}-100` : "hover:border-gray-200"
                     )}
                   >
-                    <div className="flex items-center">
-                      <div className={cn(
-                        "flex items-center justify-center h-6 w-6 rounded-lg mr-2",
-                        isItemActive(item) ? `bg-${section.color}-100/50` : "bg-gray-100/50",
-                        "group-hover:bg-white group-hover:shadow-sm transition-all duration-200"
-                      )}>
-                        <item.icon className={cn(
-                          "h-3 w-3",
-                          isItemActive(item) ? `text-${section.color}-500` : "text-gray-500",
-                          "group-hover:scale-110 transition-all duration-200"
-                        )} />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className={cn(
-                          "text-sm font-medium leading-none mb-0.5",
-                          (pathname === item.url || 
-                           (item.url === '/dashboard' && pathname.startsWith('/chat')) ||
-                           (item.url.includes('settings') && pathname.includes('settings'))) 
-                            ? `text-${section.color}-700` 
-                            : "text-gray-700"
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className={cn(
+                          "flex items-center justify-center h-6 w-6 rounded-lg mr-2",
+                          item.isPro 
+                            ? "bg-gradient-to-r from-purple-500 to-blue-500" 
+                            : isItemActive(item) ? `bg-${section.color}-100/50` : "bg-gray-100/50",
+                          "group-hover:shadow-sm transition-all duration-200"
                         )}>
-                          {item.title}
-                        </span>
-                        <span className="text-[11px] text-gray-500 group-hover:text-gray-600">
-                          {item.description}
-                        </span>
+                          <item.icon className={cn(
+                            "h-3 w-3",
+                            item.isPro 
+                              ? "text-white" 
+                              : isItemActive(item) ? `text-${section.color}-500` : "text-gray-500",
+                            "group-hover:scale-110 transition-all duration-200"
+                          )} />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className={cn(
+                            "text-sm font-medium leading-none mb-0.5",
+                            item.isPro 
+                              ? "bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent" 
+                              : isItemActive(item) ? `text-${section.color}-700` : "text-gray-700"
+                          )}>
+                            {item.title}
+                          </span>
+                          <span className="text-[11px] text-gray-500 group-hover:text-gray-600">
+                            {item.description}
+                          </span>
+                        </div>
                       </div>
+                      {item.isPro && (
+                        <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-gradient-to-r from-purple-500 to-blue-500 text-white">
+                          PRO
+                        </span>
+                      )}
                     </div>
                   </Link>
                 </div>
@@ -433,7 +454,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 return (
                   <div
                     key={conv.conversation_id}
-                    className="relative"
+                    className="relative group"
                   >
                     <Link
                       href="#"
@@ -478,7 +499,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     </Link>
                     <button
                       onClick={(e) => handleDeleteClick(e, conv.conversation_id)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-red-50 rounded-lg"
+                      className={cn(
+                        "absolute right-2 top-1/2 -translate-y-1/2",
+                        "opacity-0 group-hover:opacity-100",
+                        "transition-opacity p-1.5 hover:bg-red-50 rounded-lg z-20"
+                      )}
                     >
                       <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-500" />
                     </button>
