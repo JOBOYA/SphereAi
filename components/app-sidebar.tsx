@@ -15,6 +15,7 @@ import {
   Mic,
   Network,
   ChevronDown,
+  History,
 } from "lucide-react";
 
 import { NavMain } from "@/components/nav-main";
@@ -146,7 +147,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [conversationToDelete, setConversationToDelete] = React.useState<string | null>(null);
   const [loadingConversation, setLoadingConversation] = useState<string | null>(null);
   const [typingConversation, setTypingConversation] = useState<string | null>(null);
-  const [expandedSections, setExpandedSections] = useState<string[]>([]);
+  const [expandedSections, setExpandedSections] = useState<string[]>(['Models', 'Settings', 'Recent']);
 
   // Utiliser le service chat pour récupérer les conversations
   const fetchConversations = async () => {
@@ -280,6 +281,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     );
   };
 
+  // Ajouter une fonction pour vérifier si un item est actif
+  const isItemActive = (item: any) => {
+    return pathname === item.url || 
+           (item.url === '/dashboard' && pathname.startsWith('/chat')) ||
+           (item.url.includes('settings') && pathname.includes('settings')) ||
+           (item.url.includes('limits') && pathname.includes('limits'));
+  };
+
   return (
     <Sidebar 
       collapsible="icon" 
@@ -327,125 +336,156 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </button>
 
             <div className={cn(
-              "space-y-0.5 overflow-hidden transition-all duration-200",
+              "space-y-0.5 overflow-hidden transition-all duration-200 relative",
               expandedSections.includes(section.title) 
                 ? "max-h-[500px] opacity-100 mt-1" 
                 : "max-h-0 opacity-0"
             )}>
-              {section.items.map((item) => (
-                <Link
-                  key={item.title}
-                  href={item.url}
-                  className={cn(
-                    "group relative flex flex-col py-2 px-3 rounded-lg",
-                    "hover:bg-gray-50/80 hover:backdrop-blur-sm",
-                    pathname === item.url ? `bg-${section.color}-50 shadow-sm` : "transparent",
-                    "border border-transparent",
-                    pathname === item.url ? `border-${section.color}-100` : "hover:border-gray-200"
-                  )}
-                >
-                  <div className="flex items-center">
-                    <div className={cn(
-                      "flex items-center justify-center h-7 w-7 rounded-lg mr-2",
-                      pathname === item.url ? `bg-${section.color}-100/50` : "bg-gray-100/50",
-                      "group-hover:bg-white group-hover:shadow-sm transition-all duration-200"
-                    )}>
-                      <item.icon className={cn(
-                        "h-3.5 w-3.5",
-                        pathname === item.url ? `text-${section.color}-500` : "text-gray-500",
-                        "group-hover:scale-110 transition-all duration-200"
-                      )} />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className={cn(
-                        "text-sm font-medium leading-none mb-0.5",
-                        pathname === item.url ? `text-${section.color}-700` : "text-gray-700"
+              <div className="absolute left-2 top-1 bottom-1 w-px bg-gray-200"></div>
+              {section.items.map((item, index) => (
+                <div key={item.title} className="relative">
+                  <Link
+                    href={item.url}
+                    className={cn(
+                      "group relative flex flex-col py-2 px-3 rounded-lg ml-4",
+                      "hover:bg-gray-50/80 hover:backdrop-blur-sm",
+                      "z-10",
+                      isItemActive(item) ? `bg-${section.color}-50 shadow-sm` : "transparent",
+                      "border border-transparent",
+                      isItemActive(item) ? `border-${section.color}-100` : "hover:border-gray-200"
+                    )}
+                  >
+                    <div className="flex items-center">
+                      <div className={cn(
+                        "flex items-center justify-center h-6 w-6 rounded-lg mr-2",
+                        isItemActive(item) ? `bg-${section.color}-100/50` : "bg-gray-100/50",
+                        "group-hover:bg-white group-hover:shadow-sm transition-all duration-200"
                       )}>
-                        {item.title}
-                      </span>
-                      <span className="text-[11px] text-gray-500 group-hover:text-gray-600">
-                        {item.description}
-                      </span>
+                        <item.icon className={cn(
+                          "h-3 w-3",
+                          isItemActive(item) ? `text-${section.color}-500` : "text-gray-500",
+                          "group-hover:scale-110 transition-all duration-200"
+                        )} />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className={cn(
+                          "text-sm font-medium leading-none mb-0.5",
+                          (pathname === item.url || 
+                           (item.url === '/dashboard' && pathname.startsWith('/chat')) ||
+                           (item.url.includes('settings') && pathname.includes('settings'))) 
+                            ? `text-${section.color}-700` 
+                            : "text-gray-700"
+                        )}>
+                          {item.title}
+                        </span>
+                        <span className="text-[11px] text-gray-500 group-hover:text-gray-600">
+                          {item.description}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                </Link>
+                  </Link>
+                </div>
               ))}
             </div>
           </div>
         ))}
 
         <div className="mt-6">
-          <h3 className="mb-2 px-2 text-sm font-medium text-gray-500 flex items-center space-x-2">
-            <MessageSquare className="h-4 w-4" />
-            <span>Historique des conversations</span>
-          </h3>
-          
-          <div className="space-y-0.5 max-h-[400px] overflow-y-auto custom-scrollbar">
-            {conversations.map((conv) => {
-              const firstMessage = conv.messages[0]?.content || 'Nouvelle conversation';
-              const isTranscription = firstMessage.includes('[Transcription]');
-              const isMindmap = firstMessage.includes('[Mindmap]');
-              const shortTitle = isTranscription 
-                ? 'Transcription vocale'
-                : isMindmap
-                ? 'Mindmap: ' + firstMessage.replace('[Mindmap]', '').slice(0, 30)
-                : firstMessage.slice(0, 30) + (firstMessage.length > 30 ? '...' : '');
-              const isTyping = typingConversation === conv.conversation_id;
-              
-              return (
-                <div
-                  key={conv.conversation_id}
-                  className="group relative"
-                >
-                  <Link
-                    href="#"
-                    onClick={(e) => handleConversationClick(e, conv)}
-                    className={cn(
-                      "flex items-center gap-3 rounded-xl px-4 py-2.5 text-gray-600 transition-all hover:bg-gray-50 text-sm pr-12",
-                      "border border-transparent hover:border-gray-200",
-                      "hover:shadow-sm hover:text-gray-900",
-                      pathname === `/chat/${conv.conversation_id}` && "bg-blue-50 border-blue-200 text-blue-700",
-                      pathname === `/transcription/${conv.conversation_id}` && "bg-purple-50 border-purple-200 text-purple-700",
-                      pathname === `/mindmap/${conv.conversation_id}` && "bg-green-50 border-green-200 text-green-700"
-                    )}
+          <button
+            onClick={() => toggleSection('Recent')}
+            className={cn(
+              "w-full flex items-center justify-between px-2 py-1.5",
+              "hover:bg-gray-50/80 transition-colors duration-200",
+              expandedSections.includes('Recent') && "bg-gray-50/50"
+            )}
+          >
+            <div className="flex items-center">
+              <History className="h-4 w-4 mr-2 text-gray-500" />
+              <span className="text-sm font-semibold text-gray-600">Recent Chats</span>
+            </div>
+            <ChevronDown 
+              className={cn(
+                "h-4 w-4 text-gray-500 transition-transform duration-200",
+                expandedSections.includes('Recent') ? "transform rotate-180" : ""
+              )} 
+            />
+          </button>
+
+          <div className={cn(
+            "space-y-0.5 overflow-hidden transition-all duration-200",
+            expandedSections.includes('Recent') 
+              ? "max-h-[400px] opacity-100 mt-1" 
+              : "max-h-0 opacity-0"
+          )}>
+            <div className="relative">
+              <div className="absolute left-2 -top-1 bottom-0 w-px bg-gray-200"></div>
+              {conversations.map((conv) => {
+                const firstMessage = conv.messages[0]?.content || 'Nouvelle conversation';
+                const isTranscription = firstMessage.includes('[Transcription]');
+                const isMindmap = firstMessage.includes('[Mindmap]');
+                const shortTitle = isTranscription 
+                  ? 'Transcription vocale'
+                  : isMindmap
+                  ? 'Mindmap: ' + firstMessage.replace('[Mindmap]', '').slice(0, 30)
+                  : firstMessage.slice(0, 30) + (firstMessage.length > 30 ? '...' : '');
+                const isTyping = typingConversation === conv.conversation_id;
+                
+                return (
+                  <div
+                    key={conv.conversation_id}
+                    className="relative"
                   >
-                    {isTranscription ? (
-                      <Mic className="h-4 w-4 text-purple-500" />
-                    ) : isMindmap ? (
-                      <Network className="h-4 w-4 text-green-500" />
-                    ) : (
-                      <MessageSquare className="h-4 w-4 text-blue-500" />
-                    )}
-                    <span className="truncate font-medium">
-                      {isTyping ? (
-                        <span className="inline-flex">
-                          {shortTitle.split('').map((char, index) => (
-                            <span
-                              key={index}
-                              className="animate-fade-in"
-                              style={{
-                                animationDelay: `${index * 50}ms`,
-                                opacity: 0
-                              }}
-                            >
-                              {char}
-                            </span>
-                          ))}
-                        </span>
-                      ) : (
-                        shortTitle
+                    <Link
+                      href="#"
+                      onClick={(e) => handleConversationClick(e, conv)}
+                      className={cn(
+                        "flex items-center gap-3 rounded-xl px-4 py-2 text-gray-600 ml-4",
+                        "border border-transparent hover:border-gray-200",
+                        "hover:shadow-sm hover:text-gray-900",
+                        "relative z-10",
+                        pathname === `/chat/${conv.conversation_id}` && "bg-blue-50 border-blue-200 text-blue-700",
+                        pathname === `/transcription/${conv.conversation_id}` && "bg-purple-50 border-purple-200 text-purple-700",
+                        pathname === `/mindmap/${conv.conversation_id}` && "bg-green-50 border-green-200 text-green-700"
                       )}
-                    </span>
-                  </Link>
-                  <button
-                    onClick={(e) => handleDeleteClick(e, conv.conversation_id)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-red-50 rounded-lg"
-                  >
-                    <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-500" />
-                  </button>
-                </div>
-              );
-            })}
+                    >
+                      {isTranscription ? (
+                        <Mic className="h-4 w-4 text-purple-500" />
+                      ) : isMindmap ? (
+                        <Network className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <MessageSquare className="h-4 w-4 text-blue-500" />
+                      )}
+                      <span className="truncate font-medium">
+                        {isTyping ? (
+                          <span className="inline-flex">
+                            {shortTitle.split('').map((char, index) => (
+                              <span
+                                key={index}
+                                className="animate-fade-in"
+                                style={{
+                                  animationDelay: `${index * 50}ms`,
+                                  opacity: 0
+                                }}
+                              >
+                                {char}
+                              </span>
+                            ))}
+                          </span>
+                        ) : (
+                          shortTitle
+                        )}
+                      </span>
+                    </Link>
+                    <button
+                      onClick={(e) => handleDeleteClick(e, conv.conversation_id)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-red-50 rounded-lg"
+                    >
+                      <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-500" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </SidebarContent>
