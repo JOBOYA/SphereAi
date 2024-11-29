@@ -16,6 +16,8 @@ import {
   Network,
   ChevronDown,
   History,
+  FileText,
+  Image,
 } from "lucide-react";
 import { SketchLogo } from "@phosphor-icons/react";
 
@@ -56,10 +58,16 @@ const data = {
       color: "blue",
       items: [
         {
-          title: "Chat",
+          title: "Assistant IA",
           url: "/dashboard",
-          icon: MessageSquare,
-          description: "Discutez avec l'IA",
+          icon: FileText,
+          description: "Chat, PDF & CSV",
+        },
+        {
+          title: "AI Images",
+          url: "/images",
+          icon: Image,
+          description: "Génération d'images",
         },
         {
           title: "Voice",
