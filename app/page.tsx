@@ -27,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Language, translations } from '@/components/home/translations';
+import FUIBentoGridDark from "@/components/Farmui";
 
 export default function LandingPage() {
   const [email, setEmail] = useState("");
@@ -86,9 +87,11 @@ export default function LandingPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="relative bg-background min-h-screen overflow-hidden"
+      className="relative min-h-screen overflow-hidden"
     >
-      <div className="absolute inset-0 w-full h-full min-h-screen z-0 pointer-events-none">
+      <div className="gradient-background" />
+
+      <div className="absolute inset-0 w-full h-full min-h-screen z-0 pointer-events-none opacity-40">
         <BackgroundBeamsWithCollision children={undefined} />
       </div>
 
@@ -162,66 +165,83 @@ export default function LandingPage() {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="text-center py-12 sm:py-20 relative z-20"
+          className="text-center py-24 sm:py-32 relative z-20 max-w-5xl mx-auto"
         >
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl tracking-tight font-extrabold text-foreground">
-            <motion.span
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.5 }}
-              className="block"
-            >
-              {t.title}
-            </motion.span>
-            <motion.span
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.7 }}
-              className="block text-primary mt-2"
-            >
+          <div className="absolute inset-x-0 top-0 h-64 bg-gradient-to-b from-purple-50/50 to-transparent" />
+          
+          <motion.h1 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground"
+          >
+            <span className="block mb-4">{t.title}</span>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-500">
               {t.subtitle}
-            </motion.span>
-          </h1>
+            </span>
+          </motion.h1>
+
           <motion.p
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.9 }}
-            className="mt-6 max-w-md mx-auto text-base text-muted-foreground sm:text-lg md:mt-8 md:text-xl md:max-w-3xl"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.5 }}
+            className="mt-8 text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed"
           >
             {t.description}
           </motion.p>
+
           <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 1.1 }}
-            className="mt-8 max-w-md mx-auto sm:flex sm:justify-center"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.7 }}
+            className="mt-10 flex flex-col sm:flex-row gap-4 justify-center items-center"
           >
-            <div className="rounded-md shadow">
-              <SignedOut>
-                <SignInButton>
-                  <Button size="lg" className="w-full sm:w-auto">{t.getStarted}</Button>
-                </SignInButton>
-              </SignedOut>
-              <SignedIn>
-                <Link href="/dashboard" passHref>
-                  <Button size="lg" className="w-full sm:w-auto" onClick={handleDashboardClick} disabled={isLoading}>
-                    {isLoading ? (
-                      <>
-                        <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                        Loading...
-                      </>
-                    ) : (
-                      t.dashboard
-                    )}
-                  </Button>
-                </Link>
-              </SignedIn>
-            </div>
-            <div className="mt-3 sm:mt-0 sm:ml-3">
-              <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                {t.liveDemo}
-              </Button>
-            </div>
+            <SignedOut>
+              <SignInButton>
+                <Button 
+                  size="lg" 
+                  className="min-w-[200px] bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                >
+                  {t.getStarted}
+                </Button>
+              </SignInButton>
+            </SignedOut>
+            <SignedIn>
+              <Link href="/dashboard" passHref>
+                <Button 
+                  size="lg"
+                  className="min-w-[200px] bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                  onClick={handleDashboardClick} 
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      Loading...
+                    </>
+                  ) : (
+                    t.dashboard
+                  )}
+                </Button>
+              </Link>
+            </SignedIn>
+            
+            <Button 
+              variant="outline" 
+              size="lg" 
+              className="min-w-[200px] border-2 hover:bg-gray-50/50"
+            >
+              {t.liveDemo}
+            </Button>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.9 }}
+            className="mt-16 flex justify-center gap-8 grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all duration-200"
+          >
+            {/* Vous pouvez ajouter ici des logos de partenaires/clients */}
           </motion.div>
         </motion.div>
 
@@ -229,22 +249,90 @@ export default function LandingPage() {
           initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 1.3 }}
-          className="py-12 bg-background relative z-20"
+          className="py-24 relative z-20"
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center">
-              <LinkPreview url="https://www.google.com" >
-                <h2 className="text-base text-primary font-semibold tracking-wide uppercase">{t.features}</h2>
-              </LinkPreview>
-              <p className="mt-2 text-2xl sm:text-3xl leading-8 font-extrabold tracking-tight text-foreground sm:text-4xl">
+            <div className="text-center mb-16">
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.5, delay: 1.4 }}
+              >
+                <span className="text-sm font-semibold tracking-wide uppercase bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-500">
+                  {t.features}
+                </span>
+              </motion.div>
+              <motion.h2
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.5, delay: 1.5 }}
+                className="mt-4 text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground"
+              >
                 {t.featuresTitle}
-              </p>
+              </motion.h2>
+              <motion.p
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.5, delay: 1.6 }}
+                className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground"
+              >
+                Découvrez toutes les fonctionnalités qui font de Sphere AI une plateforme unique.
+              </motion.p>
             </div>
 
-            <div className="mt-10">
-              <Bentodemo language={language} />
+            <div className="relative">
+              {/* Effet de brillance en arrière-plan */}
+              <div className="absolute inset-0 overflow-hidden">
+                <div className="absolute -inset-x-40 -top-40 h-[500px] w-[800px] opacity-50 bg-gradient-radial from-purple-500/20 to-transparent blur-3xl" />
+                <div className="absolute -inset-x-40 -bottom-40 h-[500px] w-[800px] opacity-50 bg-gradient-radial from-blue-500/20 to-transparent blur-3xl" />
+              </div>
 
+              {/* Conteneur pour les deux grilles */}
+              <div className="relative space-y-16">
+                {/* Première grille - Bentodemo */}
+                <div className="relative backdrop-blur-sm rounded-2xl p-4">
+                  <Bentodemo language={language} />
+                </div>
+
+                {/* Deuxième grille - FUIBentoGridDark */}
+                <div className="relative backdrop-blur-sm rounded-2xl p-4">
+                  <FUIBentoGridDark />
+                </div>
+              </div>
             </div>
+
+            {/* Badges ou statistiques */}
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.5, delay: 1.7 }}
+              className="mt-20 grid grid-cols-2 gap-6 md:grid-cols-4"
+            >
+              {[
+                { number: "99%", label: "Satisfaction" },
+                { number: "24/7", label: "Support" },
+                { number: "100+", label: "Intégrations" },
+                { number: "50k+", label: "Utilisateurs" },
+              ].map((stat, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 1.8 + index * 0.1 }}
+                  className="relative group"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-100/50 to-blue-100/50 rounded-lg blur-xl transition-all duration-300 group-hover:blur-2xl opacity-70" />
+                  <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-lg p-6 text-center">
+                    <div className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-500">
+                      {stat.number}
+                    </div>
+                    <div className="mt-2 text-sm text-muted-foreground">
+                      {stat.label}
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
           </div>
         </motion.div>
 

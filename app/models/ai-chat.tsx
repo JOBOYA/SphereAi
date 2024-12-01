@@ -493,14 +493,14 @@ export function AIChat() {
 
   return (
     <Theme appearance="light" accentColor="blue" radius="large">
-      <div className="min-h-screen flex flex-col">
-        <div className="flex-1 px-2 sm:px-4 pt-2 pb-0 overflow-y-auto">
-          <div className="h-full max-w-6xl mx-auto w-full">
-            <div className="grid lg:grid-cols-2 gap-2 sm:gap-4">
-              <div className="flex flex-col bg-white rounded-xl border min-h-[50vh] lg:h-[calc(100vh-8rem)]">
+      <div className="absolute inset-0 flex flex-col">
+        <div className="flex-1 p-4 overflow-hidden">
+          <div className="h-full max-w-6xl mx-auto">
+            <div className="grid lg:grid-cols-2 gap-4 h-full">
+              <div className="flex flex-col bg-white rounded-xl border overflow-hidden">
                 <ChatHeader apiCallsRemaining={apiCallsRemaining} />
                 
-                <div className="flex-1 overflow-y-auto">
+                <div className="flex-1 overflow-y-auto min-h-0 scrollbar-thin">
                   <ChatMessages 
                     messages={messages}
                     loadingPhase={loadingPhase}
@@ -525,6 +525,7 @@ export function AIChat() {
                 isLoading={isLoading}
                 onAnalyze={analyzeFileWithAI}
                 onFileUpload={handleFileUpload}
+                className="flex flex-col overflow-hidden"
               />
             </div>
           </div>
