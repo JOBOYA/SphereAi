@@ -3,6 +3,7 @@ import { Sparkles, Upload } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { PreviewState } from '@/app/types/chat';
 import { useDropzone } from 'react-dropzone';
+import { cn } from '@/lib/utils';
 
 const PDFPreview = dynamic(() => import('../PDFPreview'), { ssr: false });
 const CSVPreview = dynamic(() => import('../CSVPreview'), { ssr: false });
@@ -14,16 +15,18 @@ interface PreviewPanelProps {
   isLoading: boolean;
   onAnalyze: () => void;
   onFileUpload: (file: File) => void;
+  className?: string;
 }
 
-export const PreviewPanel: React.FC<PreviewPanelProps> = ({
+export const PreviewPanel = ({ 
   preview,
   extractedPdfText,
   extractedCsvText,
   isLoading,
   onAnalyze,
   onFileUpload,
-}) => {
+  className
+}: PreviewPanelProps) => {
   const [isDragging, setIsDragging] = useState(false);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -103,7 +106,10 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
   };
 
   return (
-    <div className="flex flex-col bg-white rounded-xl border min-h-[30vh] lg:h-[calc(100vh-8rem)]">
+    <div className={cn(
+      "flex flex-col bg-white rounded-xl border overflow-hidden",
+      className
+    )}>
       <div className="flex-none px-4 sm:px-6 py-3 border-b">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold text-gray-900">Preview</h2>
@@ -119,9 +125,11 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
           )}
         </div>
       </div>
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-y-auto">
         {preview.file ? (
-          renderPreview()
+          <div className="p-4 overflow-x-hidden">
+            {renderPreview()}
+          </div>
         ) : (
           <div
             {...getRootProps()}
